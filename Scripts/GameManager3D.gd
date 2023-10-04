@@ -18,8 +18,11 @@ extends MeshInstance3D
 @export var inventory_list: ItemList
 @export var camera: Camera3D
 @export var auto_kill_checkbox: CheckButton
+@export var auto_mine_checkbox: CheckButton
+@export var debug_move_label: Label
 
 var concrete_scene = preload("res://Prefabs/Concrete.tscn")
+var unknown_block_scene = preload("res://Prefabs/UnknownBlock.tscn")
 var wood_scene = preload("res://Prefabs/Wood.tscn")
 var dirt_scene = preload("res://Prefabs/Dirt.tscn")
 var tombstone_scene = preload("res://Prefabs/Tombstone.tscn")
@@ -56,6 +59,7 @@ func _ready():
 	#inventory_list.set_process_input(false)
 	print("Connecting...")
 	socket.connect_to_url(websocket_url)
+	socket.inbound_buffer_size = 65535*256
 	
 	
 # Called every frame. 'delta' is the elapsed time since the previous frame.
@@ -74,17 +78,24 @@ func _process(delta):
 		print("WebSocket closed with code: %d, reason %s. Clean: %s" % [code, reason, code != -1])
 		set_process(false) # Stop processing.
 		get_tree().quit()
+		
+	#if Time.get_unix_time_from_system() - last_move_time > 0.25:
+	#	print('reseting...')
+	##	last_move_time = Time.get_unix_time_from_system()
+	#	move_3d(Vector3(0, 0, 0))
 	
+var last_move_time = 0
 var highlight_square = null
 func _input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed:
 		if event.keycode == KEY_K:
-			for i in range(10):
+			for i in range(hp+1):
 				interact(Vector2(0, 0))
-		elif event.keycode == KEY_I:
-			move_raw("1i", "0")
-		elif event.keycode == KEY_J:
-			move_raw("-1i", "0")
+			
+		#elif event.keycode == KEY_SHIFT:
+			#move_raw("1i", "0")
+		#elif event.keycode == KEY_CTRL:
+			#move_raw("-1i", "0")
 	
 	if event is InputEventMouseButton and \
 	!event.pressed and \
@@ -102,12 +113,13 @@ func _input(event: InputEvent) -> void:
 		if highlight_square != null:
 			highlight_square.queue_free()
 		var from = camera.project_ray_origin(event.position)
-		var to = from + camera.project_ray_normal(event.position) * 100
+		var to = from + camera.project_ray_normal(event.position) * camera.far
 		
 		
 		var cursorPos = Plane(Vector3(0, 1, 0), -0.5).intersects_ray(from, to)
 		if cursorPos == null:
 			return
+		
 		cursorPos += Vector3(0, 1, 0)
 		var inst = MeshInstance3D.new()
 		var mesh = BoxMesh.new()
@@ -118,16 +130,13 @@ func _input(event: InputEvent) -> void:
 		add_child(inst)
 		highlight_square = inst
 		
-	
-		#var selected_pos = floor(get_global_mouse_position() / CELL_SIZE_VEC)
-		#if event.button_index == MOUSE_BUTTON_LEFT:
-		#	interact(selected_pos)
-		#elif event.button_index == MOUSE_BUTTON_RIGHT:
-		#	var selected_items = inventory_list.get_selected_items()
-		#		if len(selected_items) < 1: return
-		#	interact(selected_pos, selected_items[0])
-		
-		
+func interact_raw(x, y, slot=-1):
+	socket.send_text(JSON.stringify({
+		"type": "interact",
+		"x": str(x),
+		"y": str(y),
+		"slot": str(slot)
+	}))
 
 func interact(pos, slot=-1):
 	socket.send_text(JSON.stringify({
@@ -163,7 +172,7 @@ func move_3d(dpos):
 		x += str(abs(dpos.y))
 		x += "i"
 	var y = str(-dpos.z)
-	#print(x, " ", y)
+	debug_move_label.text = "%s, %s" % [x, y]
 	socket.send_text(JSON.stringify({
 		"type": "move",
 		"x": x,
@@ -185,7 +194,9 @@ func update_map(new_map):
 			var pos = Vector3(x, z, y)
 			
 			var instance = null
-			if block.type == 'concrete':
+			if block.type == "air":
+				pass
+			elif block.type == 'concrete':
 				instance = concrete_scene.instantiate()
 			elif block.type == "wood":
 				instance = wood_scene.instantiate()
@@ -193,9 +204,12 @@ func update_map(new_map):
 				instance = dirt_scene.instantiate()
 			elif block.type == "tombstone":
 				instance = tombstone_scene.instantiate()
-				instance.set_text(block.text.left(30))
+				instance.set_text(block.text.left(25))
 				instance.set_font_size(40)
-			# todo: UNKNOWN block
+			else:
+				instance = unknown_block_scene.instantiate()
+				instance.set_text(block.type)
+			
 			if instance != null:
 				instance.translate(pos)
 				add_child(instance)
@@ -203,6 +217,12 @@ func update_map(new_map):
 			if pos in map and map[pos].mesh_instance != null:
 				map[pos].mesh_instance.queue_free()
 			map[pos] = block
+			
+			if auto_mine_checkbox.button_pressed and block.type != "air" and \
+			abs(pos.x) <= 1 and abs(pos.z) <= 1 \
+			and (pos.x != 0 or pos.z != 0):
+				interact(Vector2(pos.x, pos.z))
+				
 
 
 func format_inventory(inventory, item_list: ItemList):
@@ -240,6 +260,7 @@ func format_inventory(inventory, item_list: ItemList):
 	#for i in range(len(new_items))
 	
 
+var hp = 0
 func update_entities(new_entities):
 	last_entity_fetch += 1
 	
@@ -249,6 +270,7 @@ func update_entities(new_entities):
 	entities = []
 	for entity in new_entities:
 		if entity.type == "player" and entity.name == player_name:
+			hp = int(entity.hp)
 			hp_label.text = "HP: %s/%s" % [entity.hp, entity.max_hp]
 			xp_label.text = "XP: %s" % [entity.xp]
 			level_label.text = "Level: %s" % [entity.level]
@@ -257,8 +279,9 @@ func update_entities(new_entities):
 		var pos = Vector3(int(entity['x']), z, -int(entity['y']))
 		var instance = null
 		
-		if auto_kill_checkbox.button_pressed and (entity.type == "monster" or (entity.type == "player" and entity.name != player_name)):
-			if max(abs(pos.x), abs(pos.z)) <= 1:
+		if auto_kill_checkbox.button_pressed and \
+		(entity.type == "monster" or (entity.type == "player" and entity.name != player_name)):
+			if max(abs(pos.x), abs(pos.z)) <= 1 and (pos.x != 0 or pos.z != 0):
 				for i in range(10): interact(Vector2(pos.x, pos.z))
 		
 		if entity.type == "player":
@@ -282,6 +305,8 @@ func update_entities(new_entities):
 		entities.append(entity)
 
 
+var last_tick = 0
+var has_moved_tick = false
 func _handle_packet(data):
 	if data['type'] == "connect":
 		assert(data["version"] == 1)
@@ -292,40 +317,40 @@ func _handle_packet(data):
 		print("Connected to server")
 		move_raw("0", "0")
 	elif data['type'] == 'tick':
+		has_moved_tick = false
 		var map = data['map']
 		var entities = data['entities']
 		update_map(map)
 		update_entities(entities)
 	
 	elif data['type'] == 'move':
-		var failed_move = false
+		var failed_move = true
 		for entity in data.entities:
 			if entity.type == "player" and entity.name == player_name:
-				#print("%s, %s, %s" % [entity.x, entity.y, last_move])
-				if entity.x != "0" or entity.y != "0":
-					failed_move = true
+				if entity.x == "0" and entity.y == "0":
+					failed_move = false
 	
-		if not failed_move and last_move != Vector3.ZERO:
+		if not failed_move and last_move != Vector3.ZERO and last_move != null:
 			var new_map = {}
-			print(last_move)
 			for pos in map:
 				if map[pos].type == "air": continue
 				var new_pos = pos - last_move
 				map[pos].mesh_instance.translate(-last_move)
 				new_map[new_pos] = map[pos]
 			map = new_map
+			has_moved_tick = true
 		last_move = null
 	
 		var keyboard = Vector2(
 			Input.get_axis("ui_left","ui_right"), 
 			Input.get_axis("ui_up","ui_down"))
-		var im = null
 		var dz = 0
-		if Input.is_key_pressed(KEY_SHIFT):
+		if Input.is_key_pressed(KEY_Z):
 			dz = 1
-		elif Input.is_key_pressed(KEY_CTRL):
+		elif Input.is_key_pressed(KEY_X):
 			dz = -1
 		last_move = Vector3(keyboard.x, dz, keyboard.y)
+		last_move_time = Time.get_unix_time_from_system()
 		move_3d(last_move)
 		
 	
