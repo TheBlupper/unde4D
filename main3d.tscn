@@ -1,0 +1,94 @@
+[gd_scene load_steps=8 format=3 uid="uid://b17agn6fu0lio"]
+
+[ext_resource type="Script" path="res://Scripts/FreeLook.gd" id="1_mcluh"]
+[ext_resource type="Script" path="res://Scripts/GameManager3D.gd" id="2_tke7g"]
+[ext_resource type="FontFile" uid="uid://mt7jmued0xwa" path="res://Font.ttf" id="3_skamj"]
+
+[sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_i7me7"]
+sky_top_color = Color(0.384314, 0.454902, 0.54902, 1)
+sky_energy_multiplier = 5.9
+
+[sub_resource type="Sky" id="Sky_v0tab"]
+sky_material = SubResource("ProceduralSkyMaterial_i7me7")
+
+[sub_resource type="Environment" id="Environment_okg0n"]
+sky = SubResource("Sky_v0tab")
+ambient_light_source = 3
+ambient_light_color = Color(0.980392, 0.980392, 0.980392, 1)
+ambient_light_energy = 1.82
+
+[sub_resource type="Theme" id="Theme_q6ci6"]
+default_font = ExtResource("3_skamj")
+default_font_size = 40
+
+[node name="Node3D" type="Node3D"]
+
+[node name="Camera3D" type="Camera3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.644111, 0.764932, 0, -0.764932, 0.644111, 0, 5.95784, 6.92641)
+size = 0.001
+script = ExtResource("1_mcluh")
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_okg0n")
+
+[node name="GameManager" type="MeshInstance3D" parent="." node_paths=PackedStringArray("hp_label", "xp_label", "level_label", "inventory_list", "camera", "auto_kill_checkbox")]
+script = ExtResource("2_tke7g")
+hp_label = NodePath("../CanvasLayer/VBoxContainer/HPLabel")
+xp_label = NodePath("../CanvasLayer/VBoxContainer/XPLabel")
+level_label = NodePath("../CanvasLayer/VBoxContainer/LevelLabel")
+inventory_list = NodePath("../CanvasLayer/VBoxContainer/VBoxContainer2/InventoryLabel/InventoryList")
+camera = NodePath("../Camera3D")
+auto_kill_checkbox = NodePath("../CanvasLayer/VBoxContainer/AutoKill")
+
+[node name="CanvasLayer" type="CanvasLayer" parent="."]
+
+[node name="VBoxContainer" type="VBoxContainer" parent="CanvasLayer"]
+offset_left = 23.0
+offset_top = 18.0
+offset_right = 323.0
+offset_bottom = 140.0
+
+[node name="HPLabel" type="Label" parent="CanvasLayer/VBoxContainer"]
+layout_mode = 2
+theme = SubResource("Theme_q6ci6")
+text = "HP:"
+
+[node name="XPLabel" type="Label" parent="CanvasLayer/VBoxContainer"]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("3_skamj")
+theme_override_font_sizes/font_size = 40
+text = "XP: "
+
+[node name="LevelLabel" type="Label" parent="CanvasLayer/VBoxContainer"]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("3_skamj")
+theme_override_font_sizes/font_size = 40
+text = "Level:"
+
+[node name="AutoKill" type="CheckButton" parent="CanvasLayer/VBoxContainer"]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("3_skamj")
+theme_override_font_sizes/font_size = 40
+button_pressed = true
+text = "Auto-Kill"
+
+[node name="VBoxContainer2" type="VBoxContainer" parent="CanvasLayer/VBoxContainer"]
+layout_mode = 2
+
+[node name="InventoryLabel" type="Label" parent="CanvasLayer/VBoxContainer/VBoxContainer2"]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("3_skamj")
+theme_override_font_sizes/font_size = 40
+text = "Inventory:
+"
+
+[node name="InventoryList" type="ItemList" parent="CanvasLayer/VBoxContainer/VBoxContainer2/InventoryLabel"]
+custom_minimum_size = Vector2(300, 0)
+layout_mode = 2
+offset_top = 47.0
+offset_right = 300.0
+offset_bottom = 55.0
+focus_mode = 0
+allow_search = false
+auto_height = true
+text_overrun_behavior = 0

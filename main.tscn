@@ -1,15 +1,15 @@
 [gd_scene load_steps=12 format=3 uid="uid://b1prpnm2xaiwa"]
 
-[ext_resource type="Script" path="res://CameraScript.gd" id="2_freyj"]
-[ext_resource type="Script" path="res://GameManager.gd" id="3_l3eox"]
+[ext_resource type="Script" path="res://Scripts/Grid.gd" id="1_k41lh"]
+[ext_resource type="Script" path="res://Scripts/CameraScript.gd" id="2_ifbhn"]
 [ext_resource type="FontFile" uid="uid://mt7jmued0xwa" path="res://Font.ttf" id="3_xkd84"]
-[ext_resource type="Texture2D" uid="uid://ntepuyab23nf" path="res://Ghost.png" id="4_cqbno"]
-[ext_resource type="Texture2D" uid="uid://ck0uqwd8g2gc8" path="res://Surprised Emoji.png" id="5_1jpnt"]
-[ext_resource type="Texture2D" uid="uid://pfab511jv70m" path="res://Impostor.png" id="5_t5la8"]
+[ext_resource type="Script" path="res://Scripts/GameManager.gd" id="4_211qe"]
+[ext_resource type="Texture2D" uid="uid://ntepuyab23nf" path="res://Images/Ghost.png" id="5_q2smn"]
 [ext_resource type="Texture2D" uid="uid://pcnppbauw82b" path="res://tombstone.png" id="6_2j8hj"]
-[ext_resource type="Texture2D" uid="uid://ddmjbhkoojqlo" path="res://Lime.png" id="6_bkxeq"]
-[ext_resource type="Texture2D" uid="uid://b5l02gbof2xi" path="res://Red.png" id="7_i4spl"]
-[ext_resource type="Script" path="res://Grid.gd" id="9_agens"]
+[ext_resource type="Texture2D" uid="uid://pfab511jv70m" path="res://Images/Impostor.png" id="6_8n4e8"]
+[ext_resource type="Texture2D" uid="uid://ddmjbhkoojqlo" path="res://Images/Lime.png" id="7_54emp"]
+[ext_resource type="Texture2D" uid="uid://b5l02gbof2xi" path="res://Images/Red.png" id="8_5xeki"]
+[ext_resource type="Texture2D" uid="uid://ck0uqwd8g2gc8" path="res://Images/Surprised Emoji.png" id="9_w31q7"]
 
 [sub_resource type="Theme" id="Theme_mwwfv"]
 default_font = ExtResource("3_xkd84")
@@ -19,11 +19,11 @@ default_font_size = 40
 position = Vector2(-2, -5)
 
 [node name="Grid" type="Node2D" parent="."]
-script = ExtResource("9_agens")
+script = ExtResource("1_k41lh")
 
 [node name="Camera2D" type="Camera2D" parent="."]
 position = Vector2(63, 0)
-script = ExtResource("2_freyj")
+script = ExtResource("2_ifbhn")
 
 [node name="CanvasLayer" type="CanvasLayer" parent="Camera2D"]
 
@@ -80,12 +80,12 @@ text_overrun_behavior = 0
 
 [node name="Game" type="Node2D" parent="." node_paths=PackedStringArray("hp_label", "xp_label", "level_label", "inventory_list", "camera", "auto_kill_checkbox")]
 position = Vector2(-1, 0)
-script = ExtResource("3_l3eox")
-ghost_texture = ExtResource("4_cqbno")
-monster_texture = ExtResource("5_t5la8")
-player_texture = ExtResource("6_bkxeq")
-other_player_texture = ExtResource("7_i4spl")
-unknown_texture = ExtResource("5_1jpnt")
+script = ExtResource("4_211qe")
+ghost_texture = ExtResource("5_q2smn")
+monster_texture = ExtResource("6_8n4e8")
+player_texture = ExtResource("7_54emp")
+other_player_texture = ExtResource("8_5xeki")
+unknown_texture = ExtResource("9_w31q7")
 tombstone_texture = ExtResource("6_2j8hj")
 font = ExtResource("3_xkd84")
 hp_label = NodePath("../Camera2D/CanvasLayer/VBoxContainer/HPLabel")

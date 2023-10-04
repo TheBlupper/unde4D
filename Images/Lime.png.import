@@ -3,15 +3,15 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://ddmjbhkoojqlo"
-path="res://.godot/imported/Lime.png-b07c748d4f687342993da69722aa2191.ctex"
+path="res://.godot/imported/Lime.png-cae153800d72eeb10b413ef85e9eca8e.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://Lime.png"
-dest_files=["res://.godot/imported/Lime.png-b07c748d4f687342993da69722aa2191.ctex"]
+source_file="res://Images/Lime.png"
+dest_files=["res://.godot/imported/Lime.png-cae153800d72eeb10b413ef85e9eca8e.ctex"]
 
 [params]
 

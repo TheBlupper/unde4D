@@ -3,15 +3,15 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://ck0uqwd8g2gc8"
-path="res://.godot/imported/Surprised Emoji.png-b3dbec21a09bc2ad5a50e569ab5eeccb.ctex"
+path="res://.godot/imported/Surprised Emoji.png-3414f6afcab225d838b383d077d069aa.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://Surprised Emoji.png"
-dest_files=["res://.godot/imported/Surprised Emoji.png-b3dbec21a09bc2ad5a50e569ab5eeccb.ctex"]
+source_file="res://Images/Surprised Emoji.png"
+dest_files=["res://.godot/imported/Surprised Emoji.png-3414f6afcab225d838b383d077d069aa.ctex"]
 
 [params]
 

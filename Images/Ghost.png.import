@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://pfab511jv70m"
-path="res://.godot/imported/Impostor.png-1d3af09980dcfdb399f6e2b473b5550e.ctex"
+uid="uid://ntepuyab23nf"
+path="res://.godot/imported/Ghost.png-1c5eeaf8e57964ce6b6ee2ffbe91ae91.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://Impostor.png"
-dest_files=["res://.godot/imported/Impostor.png-1d3af09980dcfdb399f6e2b473b5550e.ctex"]
+source_file="res://Images/Ghost.png"
+dest_files=["res://.godot/imported/Ghost.png-1c5eeaf8e57964ce6b6ee2ffbe91ae91.ctex"]
 
 [params]
 

@@ -62,13 +62,13 @@ func _process(delta):
 
 func _input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed:
-		if event.keycode == KEY_W:
+		if event.keycode == KEY_UP:
 			move(Vector2(0, -1))
-		elif event.keycode == KEY_S:
+		elif event.keycode == KEY_DOWN:
 			move(Vector2(0, 1))
-		elif event.keycode == KEY_A:
+		elif event.keycode == KEY_LEFT:
 			move(Vector2(-1, 0))
-		elif event.keycode == KEY_D:
+		elif event.keycode == KEY_RIGHT:
 			move(Vector2(1, 0))
 		elif event.keycode == KEY_K:
 			for i in range(10):
@@ -76,7 +76,7 @@ func _input(event: InputEvent) -> void:
 		elif event.keycode == KEY_I:
 			move_raw("1i", "0")
 		elif event.keycode == KEY_J:
-			move_raw("0", "1i")
+			move_raw("-1i", "0")
 	
 	if event is InputEventMouseButton and !event.pressed:
 		var selected_pos = floor(get_global_mouse_position() / CELL_SIZE_VEC)
@@ -116,15 +116,6 @@ func move(dpos):
 	
 func update_map(new_map):
 	last_map_fetch += 1
-	
-	if next_move != null:
-		var prev_map = map.duplicate()
-		map.clear()
-		for pos in prev_map:
-			var new_pos = pos - next_move
-			map[new_pos] = prev_map[pos]
-
-	next_move = null
 	
 	var w = len(new_map[0])
 	var h = len(new_map)
@@ -195,11 +186,23 @@ func _handle_packet(data):
 			"name": player_name
 		}))
 		print("Connected to server")
-	elif data['type'] == 'tick' or data['type'] == 'move':
+	elif data['type'] == 'tick':
 		var map = data['map']
 		var entities = data['entities']
 		update_map(map)
 		update_entities(entities)
+	
+	elif data['type'] == 'move':
+		next_move = null
+		if Input.is_key_pressed(KEY_UP):
+			move(Vector2(0, -1))
+		elif Input.is_key_pressed(KEY_DOWN):
+			move(Vector2(0, 1))
+		elif Input.is_key_pressed(KEY_LEFT):
+			move(Vector2(-1, 0))
+		elif Input.is_key_pressed(KEY_RIGHT):
+			move(Vector2(1, 0))
+		
 	
 	
 

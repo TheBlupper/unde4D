@@ -1,0 +1,16 @@
+[gd_scene load_steps=4 format=3 uid="uid://p5j3s2hccsd7"]
+
+[ext_resource type="Script" path="res://Scripts/StatsDisplay.gd" id="1_xu100"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_q4fcv"]
+albedo_color = Color(0, 0.74902, 0.2, 1)
+
+[sub_resource type="CapsuleMesh" id="CapsuleMesh_01yhf"]
+material = SubResource("StandardMaterial3D_q4fcv")
+radius = 0.4
+height = 1.0
+
+[node name="MeshInstance3D" type="MeshInstance3D"]
+mesh = SubResource("CapsuleMesh_01yhf")
+script = ExtResource("1_xu100")
+offset = 1.3
