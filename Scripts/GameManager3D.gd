@@ -56,6 +56,17 @@ func _ready():
 	cursor_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	cursor_material.albedo_color = 'ffffff20'
 	
+	var mesh_material = StandardMaterial3D.new()
+	mesh_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	mesh_material.albedo_color = 'ffffff08'
+	var grid_instance = MeshInstance3D.new()
+	var mesh = BoxMesh.new()
+	mesh.size = Vector3(13, 0.1, 13)
+	mesh.material = mesh_material
+	grid_instance.mesh = mesh
+	add_child(grid_instance)
+	grid_instance.translate(Vector3(0, -0.5, 0))
+	
 	#inventory_list.set_process_input(false)
 	print("Connecting...")
 	socket.connect_to_url(websocket_url)
@@ -91,11 +102,6 @@ func _input(event: InputEvent) -> void:
 		if event.keycode == KEY_K:
 			for i in range(hp+1):
 				interact(Vector2(0, 0))
-			
-		#elif event.keycode == KEY_SHIFT:
-			#move_raw("1i", "0")
-		#elif event.keycode == KEY_CTRL:
-			#move_raw("-1i", "0")
 	
 	if event is InputEventMouseButton and \
 	!event.pressed and \
@@ -114,7 +120,6 @@ func _input(event: InputEvent) -> void:
 			highlight_square.queue_free()
 		var from = camera.project_ray_origin(event.position)
 		var to = from + camera.project_ray_normal(event.position) * camera.far
-		
 		
 		var cursorPos = Plane(Vector3(0, 1, 0), -0.5).intersects_ray(from, to)
 		if cursorPos == null:

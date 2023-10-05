@@ -11,8 +11,13 @@ config_version=5
 [application]
 
 config/name="Spooktober"
+run/main_scene="res://main3d.tscn"
 config/features=PackedStringArray("4.1", "Forward Plus")
 config/icon="res://icon.svg"
+
+[display]
+
+window/vsync/vsync_mode=0
 
 [dotnet]
 
@@ -25,5 +30,3 @@ fonts/dynamic_fonts/use_oversampling=false
 [rendering]
 
 environment/defaults/default_clear_color=Color(0.137255, 0.137255, 0.137255, 1)
-anti_aliasing/quality/msaa_2d=3
-anti_aliasing/quality/use_taa=true
