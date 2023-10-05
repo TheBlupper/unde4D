@@ -1,5 +1,4 @@
-extends MeshInstance3D
-
+extends "Block.gd"
 
 @export var offset: float
 

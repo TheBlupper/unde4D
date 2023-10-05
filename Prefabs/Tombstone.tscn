@@ -1,9 +1,9 @@
 [gd_scene load_steps=4 format=3 uid="uid://7dfg73mq3e3q"]
 
-[ext_resource type="Script" path="res://Scripts/StatsDisplay.gd" id="1_5dp6v"]
+[ext_resource type="Script" path="res://Prefabs/BlockWithText.gd" id="1_s38cj"]
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_4o1mb"]
-albedo_color = Color(0.631373, 0.631373, 0.631373, 1)
+albedo_color = Color(0.34902, 0.34902, 0.34902, 1)
 
 [sub_resource type="CylinderMesh" id="CylinderMesh_6k8wf"]
 material = SubResource("StandardMaterial3D_4o1mb")
@@ -11,5 +11,5 @@ height = 1.0
 
 [node name="MeshInstance3D" type="MeshInstance3D"]
 mesh = SubResource("CylinderMesh_6k8wf")
-script = ExtResource("1_5dp6v")
+script = ExtResource("1_s38cj")
 offset = 1.3

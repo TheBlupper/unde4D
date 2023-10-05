@@ -1,13 +1,13 @@
-[gd_scene load_steps=4 format=3 uid="uid://ds3m8hncuquem"]
+[gd_scene load_steps=4 format=3 uid="uid://dp0s3j88yfoxa"]
 
-[ext_resource type="Script" path="res://Prefabs/Block.gd" id="1_w2lgw"]
+[ext_resource type="Script" path="res://Prefabs/Block.gd" id="1_qgpow"]
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_6ihoj"]
-albedo_color = Color(0.223529, 0.141176, 0.0117647, 1)
+albedo_color = Color(0, 0.388235, 0.00784314, 1)
 
 [sub_resource type="BoxMesh" id="BoxMesh_dppt4"]
 material = SubResource("StandardMaterial3D_6ihoj")
 
 [node name="MeshInstance3D" type="MeshInstance3D"]
 mesh = SubResource("BoxMesh_dppt4")
-script = ExtResource("1_w2lgw")
+script = ExtResource("1_qgpow")
