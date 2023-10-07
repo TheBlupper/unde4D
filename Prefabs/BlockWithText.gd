@@ -14,7 +14,8 @@ func set_font_size(sz: int):
 func _init():
 	label = Label3D.new()
 	label.text = ""
-	label.font_size = 64
+	label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+	label.font_size = 32
 	add_child(label)
 
 func _ready():

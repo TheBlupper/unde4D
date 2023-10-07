@@ -21,7 +21,6 @@ func set_items(inventory):
 		i += 1
 	
 	var mismatch = false
-	var digits = "0123456789"
 	var selected_indices = get_selected_items()
 	var prev_idx = -1
 	var prev_item_count = item_count
