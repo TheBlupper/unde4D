@@ -285,7 +285,6 @@ func update_entities(new_entities):
 			xp_label.text = "XP: %s" % [entity.xp]
 			level_label.text = "Level: %s" % [entity.level]
 			inventory_list.set_items(entity.inventory)
-			#format_inventory(entity.inventory, inventory_list)
 
 		var pos = Vector4(int(entity['x']), -int(entity['y']), 0, 0)
 		var instance = null
@@ -381,8 +380,3 @@ func _handle_packet(data):
 		if interacting: last_move = Vector4.ZERO
 		else: last_move = get_keyboard_vec()
 		move_4d(last_move)
-		
-	
-
-var CELL_SIZE = 120
-var CELL_SIZE_VEC = Vector2(CELL_SIZE, CELL_SIZE)
