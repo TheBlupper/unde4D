@@ -21,6 +21,7 @@ extends MeshInstance3D
 @export var auto_mine_checkbox: CheckButton
 @export var show_moves_checkbox: CheckButton
 @export var exclude_players_checkbox: CheckButton
+@export var exclude_ghosts_checkbox: CheckButton
 @export var debug_move_label: Label
 
 var concrete_scene = preload("res://Prefabs/Concrete.tscn")
@@ -29,6 +30,8 @@ var wood_scene = preload("res://Prefabs/Wood.tscn")
 var dirt_scene = preload("res://Prefabs/Dirt.tscn")
 var tombstone_scene = preload("res://Prefabs/Tombstone.tscn")
 var leaves_scene = preload("res://Prefabs/Leaves.tscn")
+var spawner_scene = preload("res://Prefabs/Spawner.tscn")
+var amethyst_scene = preload("res://Prefabs/Amethyst.tscn")
 
 var player_scene = preload("res://Prefabs/Player.tscn")
 var other_player_scene = preload("res://Prefabs/OtherPlayer.tscn")
@@ -38,7 +41,6 @@ var ghost_scene = preload("res://Prefabs/Ghost.tscn")
 var websocket_url = "wss://daydun.com:666/"
 var player_name = "blupper";
 
-# Our WebSocketClient instance
 var socket = WebSocketPeer.new()
 
 var map = {}
@@ -92,7 +94,7 @@ func _process(delta):
 		get_tree().quit()
 	
 	var vec = get_keyboard_vec()
-	debug_move_label.text = "%d%+di %d%+di" % [vec.x, vec.y, vec.z, vec.w]
+	debug_move_label.text = "%d%+di %d%+di" % [vec.x, vec.z, vec.y, vec.w]
 	if interacting:
 		debug_move_label.text += " (interacting, slot %d)" % interact_slot
 		
@@ -241,6 +243,10 @@ func update_map(new_map: Array) -> void:
 				instance = dirt_scene.instantiate()
 			elif block.type == "leaves":
 				instance = leaves_scene.instantiate()
+			elif block.type == "spawner":
+				instance = spawner_scene.instantiate()
+			elif block.type == "amethyst":
+				instance = amethyst_scene.instantiate()
 			elif block.type == "tombstone":
 				instance = tombstone_scene.instantiate()
 				instance.set_text(block.text.left(32))
@@ -284,10 +290,20 @@ func update_entities(new_entities: Array) -> void:
 		if auto_kill_checkbox.button_pressed and \
 		(
 			entity.type == "monster" or \
-			(entity.type == "player" and entity.name != player_name and not exclude_players_checkbox.button_pressed)) and \
+			(entity.type == "player" and entity.name != player_name and not exclude_players_checkbox.button_pressed) or \
+			(entity.type == "ghost" and not exclude_ghosts_checkbox.button_pressed)
+		) and \
 		max(abs(pos.x), abs(pos.y)) <= 1 and \
 		(pos.x != 0 or pos.y != 0):
-				for i in range(int(entity.hp)+1): interact(Vector2(pos.x, pos.y))
+			var enemy_hp = 4
+			if entity.type == "monster" or entity.type == "player":
+				enemy_hp = int(entity.hp)
+			for i in range(enemy_hp+1):
+				if entity.type == "ghost":
+					interact_4d(Vector4(pos.x, pos.y, 1, 0))
+					interact_4d(Vector4(pos.x, pos.y, -1, 0))
+				else:
+					interact_4d(Vector4(pos.x, pos.y, 0, 0))
 		
 		if entity.type == "player":
 			if entity.name == player_name:
@@ -315,14 +331,12 @@ func get_keyboard_vec() -> Vector4:
 		Input.get_axis("ui_up","ui_down"))
 	var z = 0
 	var w = 0
-	if Input.is_key_pressed(KEY_W):
-		z = 1
-	elif Input.is_key_pressed(KEY_S):
-		z = -1
-	if Input.is_key_pressed(KEY_A):
-		w = -1
-	elif Input.is_key_pressed(KEY_D):
-		w = 1
+	
+	if Input.is_key_pressed(KEY_W): z = 1
+	elif Input.is_key_pressed(KEY_S): z = -1
+	
+	if Input.is_key_pressed(KEY_A): w = -1
+	elif Input.is_key_pressed(KEY_D): w = 1
 	return Vector4(keyboard.x, keyboard.y, z, w)
 
 func move_map(move: Vector4) -> void:
@@ -333,11 +347,12 @@ func move_map(move: Vector4) -> void:
 		if map[pos].type == "air": continue
 		
 		var instance = map[pos].mesh_instance
-		instance.translate(-xyz(last_move))
-		if new_pos.w != 0:
-			instance.hide()
-		else:
-			instance.show()
+		if instance != null:
+			instance.translate(-xyz(last_move))
+			if new_pos.w != 0:
+				instance.hide()
+			else:
+				instance.show()
 	map = new_map
 
 func handle_packet(data: Dictionary) -> void:

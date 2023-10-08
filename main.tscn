@@ -5,7 +5,7 @@
 [ext_resource type="FontFile" uid="uid://mt7jmued0xwa" path="res://Font.ttf" id="3_xkd84"]
 [ext_resource type="Script" path="res://Scripts/GameManager.gd" id="4_211qe"]
 [ext_resource type="Texture2D" uid="uid://ntepuyab23nf" path="res://Images/Ghost.png" id="5_q2smn"]
-[ext_resource type="Texture2D" uid="uid://pcnppbauw82b" path="res://tombstone.png" id="6_2j8hj"]
+[ext_resource type="Texture2D" uid="uid://c1eo4gtbu32j8" path="res://tombstone.png" id="6_2j8hj"]
 [ext_resource type="Texture2D" uid="uid://pfab511jv70m" path="res://Images/Impostor.png" id="6_8n4e8"]
 [ext_resource type="Texture2D" uid="uid://ddmjbhkoojqlo" path="res://Images/Lime.png" id="7_54emp"]
 [ext_resource type="Texture2D" uid="uid://b5l02gbof2xi" path="res://Images/Red.png" id="8_5xeki"]

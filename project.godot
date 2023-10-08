@@ -10,7 +10,7 @@ config_version=5
 
 [application]
 
-config/name="Spooktober"
+config/name="unde4D"
 run/main_scene="res://main3d.tscn"
 config/features=PackedStringArray("4.1", "Forward Plus")
 config/icon="res://icon.svg"
@@ -29,4 +29,5 @@ fonts/dynamic_fonts/use_oversampling=false
 
 [rendering]
 
+textures/canvas_textures/default_texture_filter=0
 environment/defaults/default_clear_color=Color(0.137255, 0.137255, 0.137255, 1)

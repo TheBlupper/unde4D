@@ -1,7 +1,12 @@
-[gd_scene load_steps=3 format=3 uid="uid://dp0s3j88yfoxa"]
+[gd_scene load_steps=4 format=3 uid="uid://dp0s3j88yfoxa"]
+
+[ext_resource type="Texture2D" uid="uid://btwj3mjnk20ri" path="res://Images/Leaves.png" id="1_k7up6"]
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_6ihoj"]
-albedo_color = Color(0, 0.388235, 0.00784314, 1)
+transparency = 1
+albedo_texture = ExtResource("1_k7up6")
+uv1_scale = Vector3(3, 2, 1)
+texture_filter = 0
 
 [sub_resource type="BoxMesh" id="BoxMesh_dppt4"]
 material = SubResource("StandardMaterial3D_6ihoj")
