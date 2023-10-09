@@ -109,7 +109,7 @@ text = "Render distance"
 
 [node name="RenderDistance" type="SpinBox" parent="CanvasLayer/VBoxContainer/RenderDistanceContainer"]
 layout_mode = 2
-min_value = 1.0
+max_value = 10.0
 value = 1.0
 custom_arrow_step = 1.0
 

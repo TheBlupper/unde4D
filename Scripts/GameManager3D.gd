@@ -90,6 +90,7 @@ func _ready():
 	print("Connecting...")
 	socket.connect_to_url(websocket_url)
 	socket.inbound_buffer_size = 65535*256
+	socket.outbound_buffer_size = 65535*256
 	
 
 func _process(delta):	
@@ -284,22 +285,39 @@ func update_map(new_map: Array, offset: Vector4 = Vector4.ZERO) -> void:
 			and (pos.x != 0 or pos.y != 0):
 				interact(Vector2(pos.x, pos.y))
 
-func update_entities(new_entities: Array) -> void:
-	last_entity_fetch += 1
-	
+func lte(v1: Vector4, v2: Vector4):
+	return (v1.x <= v2.x) and \
+		(v1.y <= v2.y) and \
+		(v1.z <= v2.z) and \
+		(v1.w <= v2.w)
+		
+func gte(v1: Vector4, v2: Vector4):
+	return (v1.x >= v2.x) and \
+		(v1.y >= v2.y) and \
+		(v1.z >= v2.z) and \
+		(v1.w >= v2.w)
+
+func clear_entities(lower_bound: Vector4, upper_bound: Vector4):
+	var new_entities = []
 	for old_entity in entities:
-		if old_entity.instance != null:
-			old_entity.instance.queue_free()
-	entities = []
+		if lte(old_entity.pos, upper_bound) and gte(old_entity.pos, lower_bound):
+			if old_entity.instance != null:
+				old_entity.instance.queue_free()
+		else:
+			new_entities.append(old_entity)
+	entities = new_entities
+
+func update_entities(new_entities: Array, offset: Vector4 = Vector4.ZERO, ignore_player: bool = false) -> void:
+	last_entity_fetch += 1
 	for entity in new_entities:
-		if entity.type == "player" and entity.name == player_name:
+		if entity.type == "player" and entity.name == player_name and not ignore_player:
 			hp = int(entity.hp)
 			hp_label.text = "HP: %s/%s" % [entity.hp, entity.max_hp]
 			xp_label.text = "XP: %s" % [entity.xp]
 			level_label.text = "Level: %s" % [entity.level]
 			inventory_list.set_items(entity.inventory)
 
-		var pos = Vector4(int(entity['x']), -int(entity['y']), 0, 0)
+		var pos = Vector4(int(entity['x']), -int(entity['y']), 0, 0) + offset
 		var instance = null
 		
 		if auto_kill_checkbox.button_pressed and \
@@ -377,6 +395,7 @@ func handle_connect(data: Dictionary) -> void:
 	
 func handle_tick(data: Dictionary) -> void:
 	update_map(data['map'])
+	clear_entities(Vector4(-7, -7, 0, 0), Vector4(7, 7, 0, 0))
 	update_entities(data['entities'])
 
 
@@ -399,7 +418,20 @@ func update_look_offsets():
 		if map[pos].mesh_instance != null:
 			map[pos].mesh_instance.queue_free()
 	map = {}
+	for ent in entities:
+		if ent.instance != null:
+			ent.instance.queue_free()
+	entities = []
 	look_offsets = []
+	
+	for level in range(-int(render_down), int(render_up)+1):
+		for i in range(-chunks, chunks+1):
+			for j in range(-chunks, chunks+1):
+				if i == 0 and j == 0 and level == 0: continue
+				look_offsets.append(from_world(Vector3(i*13, level, j*13)))
+	
+	look_counter = len(look_offsets)
+	return
 	var off = 1-13*floor(chunks/2) if chunks%2 == 1 else 6-13*floor(chunks/2)
 	for level in range(-int(render_down), int(render_up)+1):
 		for i in range(chunks):
@@ -426,7 +458,11 @@ func handle_move(data: Dictionary) -> void:
 				found_offset = Vector4(int(entity.x), int(entity.y), 0, 0)
 				
 	if look_counter < len(look_offsets):
-		update_map(data['map'], look_offsets[look_counter])
+		var off =  look_offsets[look_counter]
+		var view_sz = Vector4(7, 7, 0, 0)
+		update_map(data['map'], off)
+		clear_entities(off - view_sz, off + view_sz)
+		update_entities(data['entities'], off)
 		look_counter += 1
 		return
 		
