@@ -11,6 +11,12 @@ func set_text(text: String):
 	
 func set_font_size(sz: int):
 	label.font_size = sz
+
+func set_constant_size(enabled: bool):
+	label.fixed_size = enabled
+	if enabled:
+		label.scale_object_local(Vector3(0.1, 0.1, 0.1))
+		label.translate(Vector3(0, offset*9, 0))
 	
 func _init():
 	label = Label3D.new()

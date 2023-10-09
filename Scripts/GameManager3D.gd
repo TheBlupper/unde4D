@@ -42,6 +42,7 @@ var player_scene = preload("res://Prefabs/Player.tscn")
 var other_player_scene = preload("res://Prefabs/OtherPlayer.tscn")
 var enemy_scene = preload("res://Prefabs/Enemy.tscn")
 var ghost_scene = preload("res://Prefabs/Ghost.tscn")
+var unknown_entity_scene = preload("res://Prefabs/UnknownEntity.tscn")
 
 var websocket_url = "wss://daydun.com:666/"
 var player_name = "blupper";
@@ -93,7 +94,7 @@ func _ready():
 	socket.outbound_buffer_size = 65535*256
 	
 
-func _process(delta):	
+func _process(delta):
 	socket.poll()
 	var state = socket.get_ready_state()
 	if state == WebSocketPeer.STATE_OPEN:
@@ -183,9 +184,8 @@ func _input(event: InputEvent) -> void:
 		elif event.button_index == MOUSE_BUTTON_LEFT:
 			interact(selected_square)
 		elif event.button_index == MOUSE_BUTTON_MIDDLE:
-			print(map.get(Vector4(selected_square.x, selected_square.y, 0, 0)))
 			for ent in entities:
-				if int(ent['x']) == selected_square.x and int(ent['y']) == -selected_square.y:
+				if ent.pos.x == selected_square.x and ent.pos.y == selected_square.y:
 					print(ent)
 			
 		
@@ -265,7 +265,7 @@ func update_map(new_map: Array, offset: Vector4 = Vector4.ZERO) -> void:
 				instance = mystery_scene.instantiate()
 			elif block.type == "tombstone":
 				instance = tombstone_scene.instantiate()
-				instance.set_text(block.text.left(32))
+				#instance.set_text(block.text.left(32))
 				instance.set_font_size(40)
 			else:
 				instance = unknown_block_scene.instantiate()
@@ -344,12 +344,17 @@ func update_entities(new_entities: Array, offset: Vector4 = Vector4.ZERO, ignore
 			else:
 				instance = other_player_scene.instantiate()
 			instance.set_text("%s %s/%s" % [entity.name, entity.hp, entity.max_hp])
+			instance.set_constant_size(true)
+			instance.set_font_size(64)
 		elif entity.type == "monster":
 			instance = enemy_scene.instantiate()
-			instance.set_text("Enemy %s/%s" % [entity.hp, entity.max_hp])
+			instance.set_text("Monster %s/%s" % [entity.hp, entity.max_hp])
 		elif entity.type == "ghost":
 			instance = ghost_scene.instantiate()
 			instance.set_text("Ghost")
+		else:
+			instance = unknown_entity_scene.instantiate()
+			instance.set_text(entity.type)
 			
 		if instance != null:
 			instance.translate(to_world(pos))
@@ -378,7 +383,7 @@ func get_keyboard_vec() -> Vector4:
 	return Vector4(keyboard.x, keyboard.y, z, w)
 
 func handle_packet(data: Dictionary) -> void:
-	if data['type'] == "connect": handle_connect(data)
+	if data['type'] == 'connect': handle_connect(data)
 	elif data['type'] == 'tick': handle_tick(data)
 	elif data['type'] == 'move':handle_move(data)
 
@@ -481,10 +486,6 @@ func handle_move(data: Dictionary) -> void:
 		if next_moves[0] != null:
 			last_move = next_moves[0]
 	move_4d(last_move)
-	#if not failed_move and last_move != Vector4.ZERO and last_move != null:
-	#		# Last non-zero move succeeded
-	#	next_moves.pop_at(0)
-	#	#move_map(last_move)
 
 
 func _on_z_is_up_toggled(button_pressed):

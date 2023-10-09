@@ -4,8 +4,11 @@
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_6ihoj"]
 albedo_texture = ExtResource("1_d5exa")
+metallic_specular = 0.0
+roughness_texture = ExtResource("1_d5exa")
+roughness_texture_channel = 2
 uv1_scale = Vector3(3, 2, 1)
-texture_filter = 0
+texture_filter = 2
 
 [sub_resource type="BoxMesh" id="BoxMesh_dppt4"]
 material = SubResource("StandardMaterial3D_6ihoj")
