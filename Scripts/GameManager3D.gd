@@ -22,6 +22,10 @@ extends MeshInstance3D
 @export var show_moves_checkbox: CheckButton
 @export var exclude_players_checkbox: CheckButton
 @export var exclude_ghosts_checkbox: CheckButton
+@export var z_axis_up_checkbox: CheckButton
+@export var render_distance_spinbox: SpinBox
+@export var render_up_spinbox: SpinBox
+@export var render_down_spinbox: SpinBox
 @export var debug_move_label: Label
 
 var concrete_scene = preload("res://Prefabs/Concrete.tscn")
@@ -32,6 +36,7 @@ var tombstone_scene = preload("res://Prefabs/Tombstone.tscn")
 var leaves_scene = preload("res://Prefabs/Leaves.tscn")
 var spawner_scene = preload("res://Prefabs/Spawner.tscn")
 var amethyst_scene = preload("res://Prefabs/Amethyst.tscn")
+var mystery_scene = preload("res://Prefabs/Mystery.tscn")
 
 var player_scene = preload("res://Prefabs/Player.tscn")
 var other_player_scene = preload("res://Prefabs/OtherPlayer.tscn")
@@ -54,8 +59,19 @@ var next_moves = []
 var cursor_material: Material
 var selected_square: Vector2
 
+var render_distance
+var render_up
+var render_down
+
+
+
 # Called when the node enters the scene tree for the first time.
 func _ready():
+	render_distance = render_distance_spinbox.value
+	render_up = render_up_spinbox.value
+	render_down = render_down_spinbox.value
+	update_look_offsets()	
+	
 	cursor_material = StandardMaterial3D.new()
 	cursor_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	cursor_material.albedo_color = 'ffffff20'
@@ -70,8 +86,7 @@ func _ready():
 	grid_instance.mesh = mesh
 	add_child(grid_instance)
 	grid_instance.translate(Vector3(0, -0.5, 0))
-
-
+	
 	print("Connecting...")
 	socket.connect_to_url(websocket_url)
 	socket.inbound_buffer_size = 65535*256
@@ -219,18 +234,16 @@ func move_4d(pos: Vector4) -> void:
 		"x": x,
 		"y": y
 	}))
+
 	
-func xyz(pos: Vector4) -> Vector3:
-	return Vector3(pos.x, pos.z, pos.y)
-	
-func update_map(new_map: Array) -> void:
+func update_map(new_map: Array, offset: Vector4 = Vector4.ZERO) -> void:
 	last_map_fetch += 1
 	
 	for y in range(6, -7, -1):
 		for x in range(6, -7, -1):
 			var block = new_map[14-(y+7)][x+7]
 			block['created'] = last_map_fetch
-			var pos = Vector4(x, y, 0, 0)
+			var pos = Vector4(x, y, 0, 0) + offset
 			
 			var instance = null
 			if block.type == "air":
@@ -247,6 +260,8 @@ func update_map(new_map: Array) -> void:
 				instance = spawner_scene.instantiate()
 			elif block.type == "amethyst":
 				instance = amethyst_scene.instantiate()
+			elif block.type == "mystery":
+				instance = mystery_scene.instantiate()
 			elif block.type == "tombstone":
 				instance = tombstone_scene.instantiate()
 				instance.set_text(block.text.left(32))
@@ -257,7 +272,7 @@ func update_map(new_map: Array) -> void:
 				instance.set_font_size(32)
 			
 			if instance != null:
-				instance.translate(xyz(pos))
+				instance.translate(to_world(pos))
 				add_child(instance)
 			block.mesh_instance = instance
 			if pos in map and map[pos].mesh_instance != null:
@@ -319,7 +334,7 @@ func update_entities(new_entities: Array) -> void:
 			instance.set_text("Ghost")
 			
 		if instance != null:
-			instance.translate(xyz(pos))
+			instance.translate(to_world(pos))
 			add_child(instance)
 		entity.instance = instance
 		entity['pos'] = pos
@@ -332,28 +347,17 @@ func get_keyboard_vec() -> Vector4:
 	var z = 0
 	var w = 0
 	
-	if Input.is_key_pressed(KEY_W): z = 1
-	elif Input.is_key_pressed(KEY_S): z = -1
+	if Input.is_key_pressed(KEY_W): w = 1
+	elif Input.is_key_pressed(KEY_S): w = -1
 	
-	if Input.is_key_pressed(KEY_A): w = -1
-	elif Input.is_key_pressed(KEY_D): w = 1
+	if Input.is_key_pressed(KEY_A): z = -1
+	elif Input.is_key_pressed(KEY_D): z = 1
+	if z_is_up:
+		var tmp = w
+		w = z
+		z = tmp
+	
 	return Vector4(keyboard.x, keyboard.y, z, w)
-
-func move_map(move: Vector4) -> void:
-	var new_map = {}
-	for pos in map:
-		var new_pos = pos - last_move
-		new_map[new_pos] = map[pos]
-		if map[pos].type == "air": continue
-		
-		var instance = map[pos].mesh_instance
-		if instance != null:
-			instance.translate(-xyz(last_move))
-			if new_pos.w != 0:
-				instance.hide()
-			else:
-				instance.show()
-	map = new_map
 
 func handle_packet(data: Dictionary) -> void:
 	if data['type'] == "connect": handle_connect(data)
@@ -376,20 +380,64 @@ func handle_tick(data: Dictionary) -> void:
 	update_entities(data['entities'])
 
 
+var z_is_up = false
+func to_world(pos: Vector4) -> Vector3:
+	if z_is_up:
+		return Vector3(pos.x, pos.z, pos.y)
+	else:
+		return Vector3(pos.x, pos.w, pos.y)
+
+func from_world(pos: Vector3):
+	if z_is_up:
+		return Vector4(pos.x, pos.z, pos.y, 0)
+	else:
+		return Vector4(pos.x, pos.z, 0, pos.y)
+		
+func update_look_offsets():
+	var chunks = int(render_distance)
+	for pos in map:
+		if map[pos].mesh_instance != null:
+			map[pos].mesh_instance.queue_free()
+	map = {}
+	look_offsets = []
+	var off = 1-13*floor(chunks/2) if chunks%2 == 1 else 6-13*floor(chunks/2)
+	for level in range(-int(render_down), int(render_up)+1):
+		for i in range(chunks):
+			for j in range(chunks):
+				look_offsets.append(
+					from_world(Vector3(i*13+off, level, j*13+off))
+				)
+	look_counter = len(look_offsets)
+				
+
+var look_offsets = []
+var look_counter = len(look_offsets)
+var last_move_manual = false
+
 var last_move
 func handle_move(data: Dictionary) -> void:
-	if show_moves_checkbox.button_pressed:
-		update_map(data['map'])
 	var failed_move = true
+	var found_offset = null
 	for entity in data.entities:
 		if entity.type == "player" and entity.name == player_name:
 			if entity.x == "0" and entity.y == "0":
 				failed_move = false
-
-	if not failed_move and last_move != Vector4.ZERO and last_move != null:
-		next_moves.pop_at(0)
-		move_map(last_move)
+			else:
+				found_offset = Vector4(int(entity.x), int(entity.y), 0, 0)
+				
+	if look_counter < len(look_offsets):
+		update_map(data['map'], look_offsets[look_counter])
+		look_counter += 1
+		return
 		
+	if not failed_move and last_move != Vector4.ZERO:
+		# Last move succeeded
+		next_moves.pop_at(0)
+		update_map(data['map'])
+		for off in look_offsets:
+			move_4d(off)
+		look_counter = 0
+
 	last_move = null
 	if interacting: last_move = Vector4.ZERO
 	else: last_move = get_keyboard_vec()
@@ -397,3 +445,30 @@ func handle_move(data: Dictionary) -> void:
 		if next_moves[0] != null:
 			last_move = next_moves[0]
 	move_4d(last_move)
+	#if not failed_move and last_move != Vector4.ZERO and last_move != null:
+	#		# Last non-zero move succeeded
+	#	next_moves.pop_at(0)
+	#	#move_map(last_move)
+
+
+func _on_z_is_up_toggled(button_pressed):
+	z_is_up = button_pressed
+	update_look_offsets()
+
+
+func _on_render_distance_value_changed(value):
+	render_distance = value
+	update_look_offsets()
+	render_distance_spinbox.get_line_edit().release_focus()
+
+
+func _on_render_up_value_changed(value):
+	render_up = value
+	update_look_offsets()
+	render_up_spinbox.get_line_edit().release_focus()
+
+
+func _on_render_down_value_changed(value):
+	render_down = value
+	update_look_offsets()
+	render_down_spinbox.get_line_edit().release_focus()

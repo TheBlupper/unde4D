@@ -6,25 +6,20 @@
 [ext_resource type="Script" path="res://InventoryList.gd" id="3_gsfh4"]
 [ext_resource type="Script" path="res://FPSCounter.gd" id="3_xr44c"]
 
-[sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_i7me7"]
-sky_top_color = Color(0.384314, 0.454902, 0.54902, 1)
-sky_energy_multiplier = 5.9
+[sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_6qph1"]
+ground_bottom_color = Color(0.419608, 0.411765, 0.4, 1)
 
-[sub_resource type="Sky" id="Sky_v0tab"]
-sky_material = SubResource("ProceduralSkyMaterial_i7me7")
+[sub_resource type="Sky" id="Sky_nqiqq"]
+sky_material = SubResource("ProceduralSkyMaterial_6qph1")
 
-[sub_resource type="Environment" id="Environment_okg0n"]
-sky = SubResource("Sky_v0tab")
-ambient_light_source = 3
-ambient_light_color = Color(0.980392, 0.980392, 0.980392, 1)
-ambient_light_energy = 1.82
+[sub_resource type="Environment" id="Environment_kvws2"]
+background_mode = 2
+sky = SubResource("Sky_nqiqq")
+reflected_light_source = 2
 
 [node name="Node3D" type="Node3D"]
 
-[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
-environment = SubResource("Environment_okg0n")
-
-[node name="GameManager" type="MeshInstance3D" parent="." node_paths=PackedStringArray("hp_label", "xp_label", "level_label", "inventory_list", "camera", "auto_kill_checkbox", "auto_mine_checkbox", "show_moves_checkbox", "exclude_players_checkbox", "exclude_ghosts_checkbox", "debug_move_label")]
+[node name="GameManager" type="MeshInstance3D" parent="." node_paths=PackedStringArray("hp_label", "xp_label", "level_label", "inventory_list", "camera", "auto_kill_checkbox", "auto_mine_checkbox", "show_moves_checkbox", "exclude_players_checkbox", "exclude_ghosts_checkbox", "z_axis_up_checkbox", "render_distance_spinbox", "render_up_spinbox", "render_down_spinbox", "debug_move_label")]
 script = ExtResource("2_tke7g")
 hp_label = NodePath("../CanvasLayer/VBoxContainer/HPLabel")
 xp_label = NodePath("../CanvasLayer/VBoxContainer/XPLabel")
@@ -36,6 +31,10 @@ auto_mine_checkbox = NodePath("../CanvasLayer/VBoxContainer/AutoMine")
 show_moves_checkbox = NodePath("../CanvasLayer/VBoxContainer/ShowMoves")
 exclude_players_checkbox = NodePath("../CanvasLayer/VBoxContainer/Exclude Players")
 exclude_ghosts_checkbox = NodePath("../CanvasLayer/VBoxContainer/Exclude Ghosts")
+z_axis_up_checkbox = NodePath("../CanvasLayer/VBoxContainer/z_is_up")
+render_distance_spinbox = NodePath("../CanvasLayer/VBoxContainer/RenderDistanceContainer/RenderDistance")
+render_up_spinbox = NodePath("../CanvasLayer/VBoxContainer/MaxUpContainer/render_up")
+render_down_spinbox = NodePath("../CanvasLayer/VBoxContainer/MaxDownContainer/render_down")
 debug_move_label = NodePath("../CanvasLayer/VBoxContainer2/DebugMoveLabel")
 
 [node name="CanvasLayer" type="CanvasLayer" parent="."]
@@ -82,6 +81,12 @@ theme = ExtResource("2_rbnlw")
 button_pressed = true
 text = "Exclude Ghosts"
 
+[node name="z_is_up" type="CheckButton" parent="CanvasLayer/VBoxContainer"]
+layout_mode = 2
+focus_mode = 0
+theme = ExtResource("2_rbnlw")
+text = "Z-axis up"
+
 [node name="AutoMine" type="CheckButton" parent="CanvasLayer/VBoxContainer"]
 layout_mode = 2
 focus_mode = 0
@@ -93,6 +98,46 @@ layout_mode = 2
 focus_mode = 0
 theme = ExtResource("2_rbnlw")
 text = "Show Moves"
+
+[node name="RenderDistanceContainer" type="HBoxContainer" parent="CanvasLayer/VBoxContainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="CanvasLayer/VBoxContainer/RenderDistanceContainer"]
+layout_mode = 2
+theme = ExtResource("2_rbnlw")
+text = "Render distance"
+
+[node name="RenderDistance" type="SpinBox" parent="CanvasLayer/VBoxContainer/RenderDistanceContainer"]
+layout_mode = 2
+min_value = 1.0
+value = 1.0
+custom_arrow_step = 1.0
+
+[node name="MaxUpContainer" type="HBoxContainer" parent="CanvasLayer/VBoxContainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="CanvasLayer/VBoxContainer/MaxUpContainer"]
+layout_mode = 2
+theme = ExtResource("2_rbnlw")
+text = "Render distance up"
+
+[node name="render_up" type="SpinBox" parent="CanvasLayer/VBoxContainer/MaxUpContainer"]
+layout_mode = 2
+value = 4.0
+custom_arrow_step = 1.0
+
+[node name="MaxDownContainer" type="HBoxContainer" parent="CanvasLayer/VBoxContainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="CanvasLayer/VBoxContainer/MaxDownContainer"]
+layout_mode = 2
+theme = ExtResource("2_rbnlw")
+text = "Render distance down"
+
+[node name="render_down" type="SpinBox" parent="CanvasLayer/VBoxContainer/MaxDownContainer"]
+layout_mode = 2
+value = 1.0
+custom_arrow_step = 1.0
 
 [node name="VBoxContainer2" type="VBoxContainer" parent="CanvasLayer/VBoxContainer"]
 layout_mode = 2
@@ -155,3 +200,15 @@ far = 10000.0
 script = ExtResource("1_vrx8j")
 gimbal1 = NodePath("../..")
 gimbal2 = NodePath("..")
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_kvws2")
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="WorldEnvironment"]
+transform = Transform3D(0.973952, 0.168325, -0.151933, 0, 0.670038, 0.742327, 0.226753, -0.722991, 0.652585, 0, 1.23902, -0.0423183)
+shadow_enabled = true
+
+[connection signal="toggled" from="CanvasLayer/VBoxContainer/z_is_up" to="GameManager" method="_on_z_is_up_toggled"]
+[connection signal="value_changed" from="CanvasLayer/VBoxContainer/RenderDistanceContainer/RenderDistance" to="GameManager" method="_on_render_distance_value_changed"]
+[connection signal="value_changed" from="CanvasLayer/VBoxContainer/MaxUpContainer/render_up" to="GameManager" method="_on_render_up_value_changed"]
+[connection signal="value_changed" from="CanvasLayer/VBoxContainer/MaxDownContainer/render_down" to="GameManager" method="_on_render_down_value_changed"]

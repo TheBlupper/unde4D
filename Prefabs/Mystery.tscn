@@ -1,0 +1,14 @@
+[gd_scene load_steps=4 format=3 uid="uid://dub7wx1hwtauc"]
+
+[ext_resource type="Texture2D" uid="uid://cvoh6cqha5vuc" path="res://Images/Mystery.png" id="1_ambv0"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_h4ro5"]
+albedo_texture = ExtResource("1_ambv0")
+uv1_scale = Vector3(3, 2, 1)
+texture_filter = 0
+
+[sub_resource type="BoxMesh" id="BoxMesh_dppt4"]
+material = SubResource("StandardMaterial3D_h4ro5")
+
+[node name="MeshInstance3D" type="MeshInstance3D"]
+mesh = SubResource("BoxMesh_dppt4")
