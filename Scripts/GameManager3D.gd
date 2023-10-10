@@ -184,6 +184,7 @@ func _input(event: InputEvent) -> void:
 		elif event.button_index == MOUSE_BUTTON_LEFT:
 			interact(selected_square)
 		elif event.button_index == MOUSE_BUTTON_MIDDLE:
+			print(map.get(Vector4(selected_square.x, selected_square.y, 0, 0)))
 			for ent in entities:
 				if ent.pos.x == selected_square.x and ent.pos.y == selected_square.y:
 					print(ent)
@@ -465,8 +466,8 @@ func handle_move(data: Dictionary) -> void:
 	if look_counter < len(look_offsets):
 		var off =  look_offsets[look_counter]
 		var view_sz = Vector4(7, 7, 0, 0)
-		update_map(data['map'], off)
 		clear_entities(off - view_sz, off + view_sz)
+		update_map(data['map'], off)
 		update_entities(data['entities'], off)
 		look_counter += 1
 		return

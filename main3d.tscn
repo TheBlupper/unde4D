@@ -1,10 +1,11 @@
-[gd_scene load_steps=9 format=3 uid="uid://b17agn6fu0lio"]
+[gd_scene load_steps=10 format=3 uid="uid://b17agn6fu0lio"]
 
 [ext_resource type="Script" path="res://Scripts/Camera3D.gd" id="1_vrx8j"]
 [ext_resource type="Theme" uid="uid://cw87upj6iwq6g" path="res://UIText.tres" id="2_rbnlw"]
 [ext_resource type="Script" path="res://Scripts/GameManager3D.gd" id="2_tke7g"]
 [ext_resource type="Script" path="res://InventoryList.gd" id="3_gsfh4"]
 [ext_resource type="Script" path="res://FPSCounter.gd" id="3_xr44c"]
+[ext_resource type="Script" path="res://Scripts/SunController.gd" id="6_3ij48"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_6qph1"]
 sky_top_color = Color(0.243137, 0.678431, 0.929412, 1)
@@ -100,6 +101,13 @@ layout_mode = 2
 focus_mode = 0
 theme = ExtResource("2_rbnlw")
 text = "Show Moves"
+
+[node name="RenderShadows" type="CheckButton" parent="CanvasLayer/VBoxContainer"]
+layout_mode = 2
+focus_mode = 0
+theme = ExtResource("2_rbnlw")
+button_pressed = true
+text = "Render Shadows"
 
 [node name="RenderDistanceContainer" type="HBoxContainer" parent="CanvasLayer/VBoxContainer"]
 layout_mode = 2
@@ -208,8 +216,10 @@ environment = SubResource("Environment_kvws2")
 [node name="DirectionalLight3D" type="DirectionalLight3D" parent="WorldEnvironment"]
 transform = Transform3D(0.820461, 0.368912, -0.436747, -0.0467342, 0.804662, 0.591891, 0.56979, -0.465212, 0.677435, 0, 0, 0)
 shadow_enabled = true
+script = ExtResource("6_3ij48")
 
 [connection signal="toggled" from="CanvasLayer/VBoxContainer/z_is_up" to="GameManager" method="_on_z_is_up_toggled"]
+[connection signal="toggled" from="CanvasLayer/VBoxContainer/RenderShadows" to="WorldEnvironment/DirectionalLight3D" method="_on_render_shadows_toggled"]
 [connection signal="value_changed" from="CanvasLayer/VBoxContainer/RenderDistanceContainer/RenderDistance" to="GameManager" method="_on_render_distance_value_changed"]
 [connection signal="value_changed" from="CanvasLayer/VBoxContainer/MaxUpContainer/render_up" to="GameManager" method="_on_render_up_value_changed"]
 [connection signal="value_changed" from="CanvasLayer/VBoxContainer/MaxDownContainer/render_down" to="GameManager" method="_on_render_down_value_changed"]

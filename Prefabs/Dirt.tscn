@@ -1,17 +1,14 @@
 [gd_scene load_steps=4 format=3 uid="uid://ds3m8hncuquem"]
 
-[ext_resource type="Texture2D" uid="uid://cs4n1q8bcqkb8" path="res://Images/Dirt.png" id="1_d5exa"]
+[ext_resource type="Texture2D" uid="uid://dw3dag3m6tj70" path="res://Images/GrassTop.png" id="1_oaarc"]
 
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_6ihoj"]
-albedo_texture = ExtResource("1_d5exa")
-metallic_specular = 0.0
-roughness_texture = ExtResource("1_d5exa")
-roughness_texture_channel = 2
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_hdvmy"]
+albedo_texture = ExtResource("1_oaarc")
 uv1_scale = Vector3(3, 2, 1)
-texture_filter = 2
+texture_filter = 0
 
-[sub_resource type="BoxMesh" id="BoxMesh_dppt4"]
-material = SubResource("StandardMaterial3D_6ihoj")
+[sub_resource type="BoxMesh" id="BoxMesh_n4n4v"]
+material = SubResource("StandardMaterial3D_hdvmy")
 
 [node name="MeshInstance3D" type="MeshInstance3D"]
-mesh = SubResource("BoxMesh_dppt4")
+mesh = SubResource("BoxMesh_n4n4v")
