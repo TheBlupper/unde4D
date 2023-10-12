@@ -311,7 +311,9 @@ func clear_entities(lower_bound: Vector4, upper_bound: Vector4):
 func update_entities(new_entities: Array, offset: Vector4 = Vector4.ZERO, ignore_player: bool = false) -> void:
 	last_entity_fetch += 1
 	for entity in new_entities:
-		if entity.type == "player" and entity.name == player_name and not ignore_player:
+		if entity.type == "player" and entity.name == player_name:
+			if ignore_player: continue
+			
 			hp = int(entity.hp)
 			hp_label.text = "HP: %s/%s" % [entity.hp, entity.max_hp]
 			xp_label.text = "XP: %s" % [entity.xp]
@@ -468,7 +470,7 @@ func handle_move(data: Dictionary) -> void:
 		var view_sz = Vector4(7, 7, 0, 0)
 		clear_entities(off - view_sz, off + view_sz)
 		update_map(data['map'], off)
-		update_entities(data['entities'], off)
+		update_entities(data['entities'], off, true)
 		look_counter += 1
 		return
 		
