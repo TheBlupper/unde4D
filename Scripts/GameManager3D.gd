@@ -51,7 +51,6 @@ var socket = WebSocketPeer.new()
 
 var map = {}
 var entities = []
-var last_map_fetch = 0;
 var last_entity_fetch = 0;
 
 var hp = 0
@@ -239,13 +238,18 @@ func move_4d(pos: Vector4) -> void:
 
 	
 func update_map(new_map: Array, offset: Vector4 = Vector4.ZERO) -> void:
-	last_map_fetch += 1
 	
 	for y in range(6, -7, -1):
 		for x in range(6, -7, -1):
 			var block = new_map[14-(y+7)][x+7]
-			block['created'] = last_map_fetch
 			var pos = Vector4(x, y, 0, 0) + offset
+			
+			
+			if pos in map:
+				var prev_block = map[pos].duplicate()
+				prev_block.erase('mesh_instance')
+				if prev_block == block:
+					continue
 			
 			var instance = null
 			if block.type == "air":
