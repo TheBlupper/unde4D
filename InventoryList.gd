@@ -6,15 +6,15 @@ func _ready():
 	pass # Replace with function body.
 
 
-func set_items(inventory):
+func set_items(inventory: Dictionary):
 	var i = 0
 	var new_items = []
-	for slot in inventory:
-		var item = slot[0]
-		var count = int(slot[1])
+	for slot in inventory.keys():
+		var item = inventory[slot]
+		var count = item.count
 		var text = "%d. %s" % [i, item.type]
 		for key in item:
-			if key == "type": continue
+			if key == "type" or key == "count" or key == "slot": continue
 			text += " %s=%s" % [key, item[key]]
 		text += " x%s" % count
 		new_items.append(text)

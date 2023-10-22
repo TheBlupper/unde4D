@@ -27,8 +27,10 @@ extends MeshInstance3D
 @export var render_up_spinbox: SpinBox
 @export var render_down_spinbox: SpinBox
 @export var debug_move_label: Label
+@export var render_rock_checkbox: CheckButton
 
 var concrete_scene = preload("res://Prefabs/Concrete.tscn")
+var rock_scene = preload("res://Prefabs/Rock.tscn")
 var unknown_block_scene = preload("res://Prefabs/UnknownBlock.tscn")
 var wood_scene = preload("res://Prefabs/Wood.tscn")
 var dirt_scene = preload("res://Prefabs/Dirt.tscn")
@@ -37,6 +39,7 @@ var leaves_scene = preload("res://Prefabs/Leaves.tscn")
 var spawner_scene = preload("res://Prefabs/Spawner.tscn")
 var amethyst_scene = preload("res://Prefabs/Amethyst.tscn")
 var mystery_scene = preload("res://Prefabs/Mystery.tscn")
+var air_scene = preload("res://Prefabs/Air.tscn")
 
 var player_scene = preload("res://Prefabs/Player.tscn")
 var other_player_scene = preload("res://Prefabs/OtherPlayer.tscn")
@@ -53,7 +56,7 @@ var map = {}
 var entities = []
 var last_entity_fetch = 0;
 
-var hp = 0
+var hp = '0'
 var next_moves = []
 
 var cursor_material: Material
@@ -63,10 +66,13 @@ var render_distance
 var render_up
 var render_down
 
-
+var cnum_re = RegEx.new()
 
 # Called when the node enters the scene tree for the first time.
 func _ready():
+	# https://stackoverflow.com/a/50428157/11239740
+	cnum_re.compile("^(?=[iI.\\d+-])(?<real>[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?(?![iI.\\d]))?(?<imag>[+-]?(?:(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?)?[iI])?$")
+	
 	render_distance = render_distance_spinbox.value
 	render_up = render_up_spinbox.value
 	render_down = render_down_spinbox.value
@@ -89,8 +95,9 @@ func _ready():
 	
 	print("Connecting...")
 	socket.connect_to_url(websocket_url)
-	socket.inbound_buffer_size = 65535*256
-	socket.outbound_buffer_size = 65535*256
+	socket.inbound_buffer_size = 1024*1024*8
+	socket.outbound_buffer_size = 1024*1024*8
+	socket.max_queued_packets = 1024*16
 	
 
 func _process(delta):
@@ -112,11 +119,11 @@ func _process(delta):
 	var vec = get_keyboard_vec()
 	debug_move_label.text = "%d%+di %d%+di" % [vec.x, vec.z, vec.y, vec.w]
 	if interacting:
-		debug_move_label.text += " (interacting, slot %d)" % interact_slot
+		debug_move_label.text += " (interacting, slot %d)" % interact_slot_idx
 		
 var highlight_square = null
 var interacting = false
-var interact_slot = -1
+var interact_slot_idx = -1
 var num_map = {
 	KEY_0: 0,
 	KEY_1: 1,
@@ -130,19 +137,27 @@ var num_map = {
 	KEY_9: 9
 }
 
-func get_selected_slot() -> int:
+func get_selected_slot_idx() -> int:
 	var selected_items = inventory_list.get_selected_items()
 	if len(selected_items) < 1: return -1
 	return selected_items[0]
+	
+func get_selected_slot() -> String:
+	var idx = get_selected_slot_idx()
+	if idx == -1: return ''
+	return inventory[idx].slot
+
+func lookup_slot(idx: int) -> String:
+	return inventory[idx].slot
 
 func _input(event: InputEvent) -> void:
 	# Key Pressed
 	if event is InputEventKey and event.pressed:
-		if event.keycode == KEY_K:
+		if event.keycode == KEY_K and hp.is_valid_int():
 			for i in range(hp+1):
-				interact(Vector2(0, 0))
+				break_4d(Vector4.ZERO)
 		elif event.keycode == KEY_I:
-			interact_4d(Vector4(0, 0, 0, -1))
+			break_4d(Vector4(0, 0, 0, -1))
 	
 	# Key Released
 	if event is InputEventKey and !event.pressed:
@@ -150,22 +165,28 @@ func _input(event: InputEvent) -> void:
 			if interacting:
 				interacting = false
 			else:
-				interact_slot = get_selected_slot()
+				interact_slot_idx = get_selected_slot_idx()
 				interacting = true
 		elif event.keycode == KEY_ENTER and interacting:
-			interact_4d(get_keyboard_vec(), interact_slot)
+			if interact_slot_idx == -1:
+				break_4d(get_keyboard_vec())
+			else:
+				interact_4d(get_keyboard_vec(), lookup_slot(interact_slot_idx))
 		elif interacting and event.keycode in num_map:
-			interact_slot = num_map[event.keycode]
+			var idx = num_map[event.keycode]
+			if idx >= len(inventory): return
+			interact_slot_idx = idx
 		elif event.keycode == KEY_SPACE and interacting:
-			interact_slot = -1
+			interact_slot_idx = -1
 		elif event.keycode == KEY_H and interacting:
 			var dir = get_keyboard_vec()
-			interact_4d(Vector4(dir.x, dir.y, dir.z, 0), interact_slot)
+			interact_4d(Vector4(dir.x, dir.y, dir.z, 0), lookup_slot(interact_slot_idx))
 			next_moves.push_front(Vector4(dir.x, dir.y, dir.z, 1))
 		elif event.keycode == KEY_B and interacting:
-			var dir = get_keyboard_vec()
-			interact_4d(Vector4(dir.x, dir.y, dir.z, -1), interact_slot)
-			next_moves.push_front(Vector4(dir.x, dir.y, dir.z, 0))
+			#var dir = get_keyboard_vec()
+			#interact_4d(Vector4(dir.x, dir.y, dir.z, -1), lookup_slot(interact_slot_idx))
+			#next_moves.push_front(Vector4(dir.x, dir.y, dir.z, 0))
+			break_4d(get_keyboard_vec())
 		elif event.keycode == KEY_R:
 			for pos in map:
 				var mesh = map[pos].mesh_instance
@@ -177,11 +198,11 @@ func _input(event: InputEvent) -> void:
 	if event is InputEventMouseButton and \
 	!event.pressed:
 		if event.button_index == MOUSE_BUTTON_RIGHT:
-			var idx = get_selected_slot()
-			if idx == -1: return
-			interact(selected_square, idx)
+			var slot = get_selected_slot()
+			if slot == '': return
+			interact_4d(Vector4(selected_square.x, selected_square.y, 0, 0), slot)
 		elif event.button_index == MOUSE_BUTTON_LEFT:
-			interact(selected_square)
+			break_4d(Vector4(selected_square.x, selected_square.y, 0, 0))
 		elif event.button_index == MOUSE_BUTTON_MIDDLE:
 			print(map.get(Vector4(selected_square.x, selected_square.y, 0, 0)))
 			for ent in entities:
@@ -210,26 +231,77 @@ func _input(event: InputEvent) -> void:
 		highlight_square = inst
 
 
-func interact(pos: Vector2, slot: int=-1) -> void:
+func complex_to_vec(s: String) -> Vector2:
+	var m = cnum_re.search(s)
+	return Vector2(int(m.get_string("real")), int(m.get_string("imag")))
+
+func interact_4d(pos: Vector4, slot=-1) -> void:
+	if typeof(slot) != TYPE_STRING:
+		slot = str(slot)
 	socket.send_text(JSON.stringify({
 		"type": "interact",
-		"x": str(pos.x),
-		"y": str(-pos.y),
-		"slot": str(slot)
+		"x": "%d%+dj"%[pos[0], pos[2]],
+		"y": "%d%+dj"%[-pos[1], pos[3]],
+		"slot": slot
 	}))
 	
-func interact_4d(pos: Vector4, slot: int=-1) -> void:
-	socket.send_text(JSON.stringify({
-		"type": "interact",
-		"x": "%d%+di"%[pos[0], pos[2]],
-		"y": "%d%+di"%[-pos[1], pos[3]],
-		"slot": "%d"%slot
-	}))
+	
+var meta_keys = ["count", "mesh_instance", "slot"]
+func simplify_block(block: Dictionary):
+	var new_block = {}
+	for key in block:
+		if key in meta_keys: continue
+		new_block[key] = block[key]
+	return new_block
+
+
+func get_items_of_type(type: String) -> Array:
+	var out = []
+	for item in inventory:
+		if item.type != type: continue
+		out.append(item)
+	return out
+
+func hit_4d(pos: Vector4) -> void:
+	break_4d(pos)
+	
+func kill_4d(pos: Vector4, hp: String) -> void:
+	var swords = get_items_of_type("sword")
+	var hp_v = complex_to_vec(hp)
+	var real = hp_v.x
+	var imag = hp_v.y
+	
+	# TODO
+	while true:
+		pass
+
+func break_4d(pos: Vector4) -> void:
+	var slot = 0
+	var failed = true
+	while failed:
+		slot += 1
+		failed = false
+		for item in inventory:
+			if str(item.slot) == str(slot):
+				failed = true
+				break
+	var hits = 1
+	if pos in map:
+		var i = 0
+		if map[pos].type == "rock" and map[pos].get('strength') != null:
+			print('breaking', map[pos])
+			if map[pos].strength.is_valid_int():
+				hits = int(map[pos]['strength'])
+		for item in inventory:
+			if simplify_block(item) == simplify_block(map[pos]):
+				slot = item.slot
+	for i in range(hits):
+		interact_4d(pos, slot)
 	
 	
 func move_4d(pos: Vector4) -> void:
-	var x = "%d%+di"%[pos[0], pos[2]]
-	var y = "%d%+di"%[-pos[1], pos[3]]
+	var x = "%d%+dj"%[pos[0], pos[2]]
+	var y = "%d%+dj"%[-pos[1], pos[3]]
 	socket.send_text(JSON.stringify({
 		"type": "move",
 		"x": x,
@@ -253,7 +325,11 @@ func update_map(new_map: Array, offset: Vector4 = Vector4.ZERO) -> void:
 			
 			var instance = null
 			if block.type == "air":
-				pass
+				instance = air_scene.instantiate()
+				instance.visible = !render_rock_checkbox.button_pressed
+			elif block.type == "rock":
+				instance = rock_scene.instantiate()
+				instance.visible = render_rock_checkbox.button_pressed
 			elif block.type == 'concrete':
 				instance = concrete_scene.instantiate()
 			elif block.type == "wood":
@@ -288,7 +364,7 @@ func update_map(new_map: Array, offset: Vector4 = Vector4.ZERO) -> void:
 			if auto_mine_checkbox.button_pressed and block.type != "air" and \
 			abs(pos.x) <= 1 and abs(pos.y) <= 1 \
 			and (pos.x != 0 or pos.y != 0):
-				interact(Vector2(pos.x, pos.y))
+				break_4d(Vector4(pos.x, pos.y, 0, 0))
 
 func lte(v1: Vector4, v2: Vector4):
 	return (v1.x <= v2.x) and \
@@ -312,17 +388,23 @@ func clear_entities(lower_bound: Vector4, upper_bound: Vector4):
 			new_entities.append(old_entity)
 	entities = new_entities
 
+var inventory = []
 func update_entities(new_entities: Array, offset: Vector4 = Vector4.ZERO, ignore_player: bool = false) -> void:
 	last_entity_fetch += 1
 	for entity in new_entities:
 		if entity.type == "player" and entity.name == player_name:
 			if ignore_player: continue
 			
-			hp = int(entity.hp)
+			hp = entity.hp
 			hp_label.text = "HP: %s/%s" % [entity.hp, entity.max_hp]
 			xp_label.text = "XP: %s" % [entity.xp]
 			level_label.text = "Level: %s" % [entity.level]
 			inventory_list.set_items(entity.inventory)
+			inventory = []
+			for key in entity.inventory.keys():
+				var item = entity.inventory[key].duplicate()
+				item['slot'] = key
+				inventory.append(item)
 
 		var pos = Vector4(int(entity['x']), -int(entity['y']), 0, 0) + offset
 		var instance = null
@@ -337,13 +419,14 @@ func update_entities(new_entities: Array, offset: Vector4 = Vector4.ZERO, ignore
 		(pos.x != 0 or pos.y != 0):
 			var enemy_hp = 4
 			if entity.type == "monster" or entity.type == "player":
-				enemy_hp = int(entity.hp)
-			for i in range(enemy_hp+1):
+				if entity.hp.is_valid_int():
+					enemy_hp = int(entity.hp)
+			for i in range(enemy_hp):
 				if entity.type == "ghost":
-					interact_4d(Vector4(pos.x, pos.y, 1, 0))
-					interact_4d(Vector4(pos.x, pos.y, -1, 0))
+					hit_4d(Vector4(pos.x, pos.y, 1, 0))
+					hit_4d(Vector4(pos.x, pos.y, -1, 0))
 				else:
-					interact_4d(Vector4(pos.x, pos.y, 0, 0))
+					hit_4d(Vector4(pos.x, pos.y, 0, 0))
 		
 		if entity.type == "player":
 			if entity.name == player_name:
@@ -393,6 +476,7 @@ func handle_packet(data: Dictionary) -> void:
 	if data['type'] == 'connect': handle_connect(data)
 	elif data['type'] == 'tick': handle_tick(data)
 	elif data['type'] == 'move':handle_move(data)
+	elif data['type'] == 'error': print(data)
 
 
 func handle_connect(data: Dictionary) -> void:
@@ -516,3 +600,15 @@ func _on_render_down_value_changed(value):
 	render_down = value
 	update_look_offsets()
 	render_down_spinbox.get_line_edit().release_focus()
+
+
+func _on_render_rock_toggled(button_pressed):
+	for pos in map:
+		var block = map[pos]
+		if block.get('mesh_instance') == null: continue
+		var instance: MeshInstance3D = block.mesh_instance
+		if block.type == "rock":
+			instance.visible = button_pressed
+		elif block.type == "air":
+			instance.visible = !button_pressed
+			
