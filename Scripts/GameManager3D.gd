@@ -412,12 +412,12 @@ func update_map(new_map: Array, offset: Vector4 = Vector4.ZERO) -> void:
 			map[pos] = block
 			
 			
-			if abs(pos.x) <= 1 and abs(pos.y) <= 1 \
-			and (pos.x != 0 or pos.y != 0):
+			if abs(pos.x) <= 1 and abs(pos.y) <= 1 and abs(pos.w) <= 1 and pos.z == 0\
+			and (pos.x != 0 or pos.y != 0 or pos.w != 0):
 				if auto_mine_checkbox.button_pressed and block.type != "air":
-					break_4d(Vector4(pos.x, pos.y, 0, 0))
+					break_4d(Vector4(pos.x, pos.y, 0, pos.w))
 				elif auto_loot_checkbox.button_pressed and block.type in loot_blocks:
-					break_4d(Vector4(pos.x, pos.y, 0, 0))
+					break_4d(Vector4(pos.x, pos.y, 0, pos.w))
 
 func lte(v1: Vector4, v2: Vector4):
 	return (v1.x <= v2.x) and \

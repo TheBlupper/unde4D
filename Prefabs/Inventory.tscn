@@ -5,4 +5,4 @@
 [node name="Inventory" type="GridContainer"]
 columns = 10
 script = ExtResource("1_qw4kp")
-rows = 5
+rows = 6
