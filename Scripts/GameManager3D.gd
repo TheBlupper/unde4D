@@ -15,7 +15,8 @@ extends MeshInstance3D
 @export var hp_label: Label
 @export var xp_label: Label
 @export var level_label: Label
-@export var inventory_list: ItemList
+#@export var inventory_list: ItemList
+@export var inventory_controller: InventoryController
 @export var camera: Camera3D
 @export var auto_kill_checkbox: CheckButton
 @export var auto_mine_checkbox: CheckButton
@@ -74,7 +75,6 @@ var cnum_re = RegEx.new()
 
 # Called when the node enters the scene tree for the first time.
 func _ready():
-	print(strength_calculator.Solve([Vector2(1, 0)], Vector2(1, 2)))
 	# https://stackoverflow.com/a/50428157/11239740
 	cnum_re.compile("^(?=[iI.\\d+-])(?<real>[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?(?![iI.\\d]))?(?<imag>[+-]?(?:(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?)?[iI])?$")
 	
@@ -142,15 +142,9 @@ var num_map = {
 	KEY_9: 9
 }
 
-func get_selected_slot_idx() -> int:
-	var selected_items = inventory_list.get_selected_items()
-	if len(selected_items) < 1: return -1
-	return selected_items[0]
-	
+
 func get_selected_slot() -> String:
-	var idx = get_selected_slot_idx()
-	if idx == -1: return ''
-	return inventory[idx].slot
+	return inventory_controller.get_selected_item().slot
 
 func lookup_slot(idx: int) -> String:
 	return inventory[idx].slot
@@ -170,7 +164,7 @@ func _input(event: InputEvent) -> void:
 			if interacting:
 				interacting = false
 			else:
-				interact_slot_idx = get_selected_slot_idx()
+				interact_slot_idx = inventory_controller.selected_idx
 				interacting = true
 		elif event.keycode == KEY_ENTER and interacting:
 			if interact_slot_idx == -1:
@@ -458,12 +452,14 @@ func update_entities(new_entities: Array, offset: Vector4 = Vector4.ZERO, ignore
 			hp_label.text = "HP: %s/%s" % [entity.hp, entity.max_hp]
 			xp_label.text = "XP: %s" % [entity.xp]
 			level_label.text = "Level: %s" % [entity.level]
-			inventory_list.set_items(entity.inventory)
 			inventory = []
-			for key in entity.inventory.keys():
+			var keys = entity.inventory.keys()
+			keys.sort()
+			for key in keys:
 				var item = entity.inventory[key].duplicate()
 				item['slot'] = key
 				inventory.append(item)
+			inventory_controller.set_items(inventory.duplicate())
 
 		var pos = Vector4(int(entity['x']), -int(entity['y']), 0, 0) + offset
 		var instance = null

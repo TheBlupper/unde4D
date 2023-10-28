@@ -30,6 +30,7 @@ import/fbx/enabled=false
 [gui]
 
 fonts/dynamic_fonts/use_oversampling=false
+timers/tooltip_delay_sec=0.0
 
 [rendering]
 

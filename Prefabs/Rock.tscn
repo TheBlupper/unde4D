@@ -1,10 +1,9 @@
 [gd_scene load_steps=4 format=3 uid="uid://cjgmqpk3w7sm8"]
 
-[ext_resource type="Texture2D" uid="uid://b4iiusy1too8w" path="res://Images/Concrete.png" id="1_ixfhw"]
+[ext_resource type="Texture2D" uid="uid://b3kjuywbyrjwo" path="res://Images/Stone.png" id="1_a4twq"]
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_h4ro5"]
-albedo_color = Color(0.243137, 0.243137, 0.243137, 1)
-albedo_texture = ExtResource("1_ixfhw")
+albedo_texture = ExtResource("1_a4twq")
 uv1_scale = Vector3(3, 2, 1)
 texture_filter = 0
 
