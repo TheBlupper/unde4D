@@ -1,0 +1,8 @@
+[gd_scene load_steps=2 format=3 uid="uid://cyynbit724qj4"]
+
+[ext_resource type="Script" path="res://Prefabs/InventoryController.gd" id="1_qw4kp"]
+
+[node name="Inventory" type="GridContainer"]
+columns = 10
+script = ExtResource("1_qw4kp")
+rows = 5

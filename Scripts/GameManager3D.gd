@@ -28,6 +28,10 @@ extends MeshInstance3D
 @export var render_down_spinbox: SpinBox
 @export var debug_move_label: Label
 @export var render_rock_checkbox: CheckButton
+@export var auto_loot_checkbox: CheckButton
+
+
+var strength_calculator = preload("res://Scripts/StrengthCalculator.cs").new()
 
 var concrete_scene = preload("res://Prefabs/Concrete.tscn")
 var rock_scene = preload("res://Prefabs/Rock.tscn")
@@ -70,6 +74,7 @@ var cnum_re = RegEx.new()
 
 # Called when the node enters the scene tree for the first time.
 func _ready():
+	print(strength_calculator.Solve([Vector2(1, 0)], Vector2(1, 2)))
 	# https://stackoverflow.com/a/50428157/11239740
 	cnum_re.compile("^(?=[iI.\\d+-])(?<real>[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?(?![iI.\\d]))?(?<imag>[+-]?(?:(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?)?[iI])?$")
 	
@@ -233,7 +238,9 @@ func _input(event: InputEvent) -> void:
 
 func complex_to_vec(s: String) -> Vector2:
 	var m = cnum_re.search(s)
-	return Vector2(int(m.get_string("real")), int(m.get_string("imag")))
+	var imag = m.get_string("imag")
+	if imag == '+i' or imag == '-i': imag = imag.replace('i', '1')
+	return Vector2(int(m.get_string("real")), int(imag))
 
 func interact_4d(pos: Vector4, slot=-1) -> void:
 	if typeof(slot) != TYPE_STRING:
@@ -261,21 +268,9 @@ func get_items_of_type(type: String) -> Array:
 		if item.type != type: continue
 		out.append(item)
 	return out
-
-func hit_4d(pos: Vector4) -> void:
-	break_4d(pos)
 	
-func kill_4d(pos: Vector4, hp: String) -> void:
-	var swords = get_items_of_type("sword")
-	var hp_v = complex_to_vec(hp)
-	var real = hp_v.x
-	var imag = hp_v.y
 	
-	# TODO
-	while true:
-		pass
-
-func break_4d(pos: Vector4) -> void:
+func find_free_slot() -> String:
 	var slot = 0
 	var failed = true
 	while failed:
@@ -285,18 +280,67 @@ func break_4d(pos: Vector4) -> void:
 			if str(item.slot) == str(slot):
 				failed = true
 				break
+	return str(slot)
+
+func hit_4d(pos: Vector4) -> void:
+	break_4d(pos)
+
+func kill_4d(pos: Vector4, hp: String, shield: int = 0) -> bool:
+	var swords = get_items_of_type("sword")
+	swords.append({
+		'strength': '1',
+		'slot': find_free_slot()
+	})
+	var hp_vec = complex_to_vec(hp)
+	var sword_vecs = []
+	for sword in swords:
+		var v = complex_to_vec(sword.strength)
+		v.x = max(v.x-shield, 0)
+		v.y = max(v.y-shield, 0)
+		sword_vecs.append(v)
+	var solution = strength_calculator.Solve(sword_vecs, hp_vec)
+	
+	print('killing, shield=%s hp=%s, swords=%s solution=%s'%[shield, hp_vec,sword_vecs,solution])
+	
+	if solution == null or len(solution) != len(sword_vecs): return false
+	
+	for i in range(len(solution)):
+		var count = solution[i]
+		if count == 0: continue
+		for j in range(count):
+			interact_4d(pos, swords[i].slot)
+	return true
+
+func break_4d(pos: Vector4) -> void:
+	var slot = find_free_slot()
 	var hits = 1
 	if pos in map:
 		var i = 0
 		if map[pos].type == "rock" and map[pos].get('strength') != null:
-			print('breaking', map[pos])
-			if map[pos].strength.is_valid_int():
-				hits = int(map[pos]['strength'])
+			var pickaxes = get_items_of_type("pickaxe")
+			pickaxes.append({
+				'strength': '1',
+				'slot': slot
+			})
+			var pickaxe_vecs = []
+			for pickaxe in pickaxes:
+				pickaxe_vecs.append(complex_to_vec(pickaxe.strength))
+			var solution = strength_calculator.Solve(pickaxe_vecs, complex_to_vec(map[pos].strength))
+			print('breaking, strength=%s, pickaxes=%s solution=%s'%[map[pos].strength,pickaxe_vecs,solution])
+
+			if solution == null or len(solution) != len(pickaxes): return
+			
+			for j in range(len(solution)):
+				var count = solution[j]
+				if count == 0: continue
+				for k in range(count):
+					interact_4d(pos, pickaxes[j].slot)
+			return
+			
 		for item in inventory:
 			if simplify_block(item) == simplify_block(map[pos]):
 				slot = item.slot
-	for i in range(hits):
-		interact_4d(pos, slot)
+	interact_4d(pos, slot)
 	
 	
 func move_4d(pos: Vector4) -> void:
@@ -308,6 +352,17 @@ func move_4d(pos: Vector4) -> void:
 		"y": y
 	}))
 
+
+var loot_blocks = [
+	'sword',
+	'pickaxe',
+	'artery',
+	'ventricle',
+	'bone_marrow',
+	'health_potion',
+	'shield',
+	'soul'
+]
 	
 func update_map(new_map: Array, offset: Vector4 = Vector4.ZERO) -> void:
 	
@@ -319,7 +374,8 @@ func update_map(new_map: Array, offset: Vector4 = Vector4.ZERO) -> void:
 			
 			if pos in map:
 				var prev_block = map[pos].duplicate()
-				prev_block.erase('mesh_instance')
+				# v stupid?
+				#prev_block.erase('mesh_instance')
 				if prev_block == block:
 					continue
 			
@@ -361,10 +417,13 @@ func update_map(new_map: Array, offset: Vector4 = Vector4.ZERO) -> void:
 				map[pos].mesh_instance.queue_free()
 			map[pos] = block
 			
-			if auto_mine_checkbox.button_pressed and block.type != "air" and \
-			abs(pos.x) <= 1 and abs(pos.y) <= 1 \
+			
+			if abs(pos.x) <= 1 and abs(pos.y) <= 1 \
 			and (pos.x != 0 or pos.y != 0):
-				break_4d(Vector4(pos.x, pos.y, 0, 0))
+				if auto_mine_checkbox.button_pressed and block.type != "air":
+					break_4d(Vector4(pos.x, pos.y, 0, 0))
+				elif auto_loot_checkbox.button_pressed and block.type in loot_blocks:
+					break_4d(Vector4(pos.x, pos.y, 0, 0))
 
 func lte(v1: Vector4, v2: Vector4):
 	return (v1.x <= v2.x) and \
@@ -418,15 +477,12 @@ func update_entities(new_entities: Array, offset: Vector4 = Vector4.ZERO, ignore
 		max(abs(pos.x), abs(pos.y)) <= 1 and \
 		(pos.x != 0 or pos.y != 0):
 			var enemy_hp = 4
+			var shield = 0
 			if entity.type == "monster" or entity.type == "player":
-				if entity.hp.is_valid_int():
-					enemy_hp = int(entity.hp)
-			for i in range(enemy_hp):
-				if entity.type == "ghost":
-					hit_4d(Vector4(pos.x, pos.y, 1, 0))
-					hit_4d(Vector4(pos.x, pos.y, -1, 0))
-				else:
-					hit_4d(Vector4(pos.x, pos.y, 0, 0))
+				enemy_hp = entity.hp
+				for item in entity.inventory.values():
+					if item.type == 'shield': shield += int(item.count)	
+			kill_4d(Vector4(pos.x, pos.y, 0, 0), enemy_hp, shield)
 		
 		if entity.type == "player":
 			if entity.name == player_name:
@@ -611,4 +667,3 @@ func _on_render_rock_toggled(button_pressed):
 			instance.visible = button_pressed
 		elif block.type == "air":
 			instance.visible = !button_pressed
-			
