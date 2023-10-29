@@ -2,20 +2,21 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://dnx6icr66so52"
-path="res://.godot/imported/Grass.png-2bc8e2b86300096a48fb913d9c28446f.ctex"
+uid="uid://s82whi5qhqdi"
+path.s3tc="res://.godot/imported/Veilstone.png-5ac0b85d988bf7eaff97bfcd2f3d8ac3.s3tc.ctex"
 metadata={
-"vram_texture": false
+"imported_formats": ["s3tc_bptc"],
+"vram_texture": true
 }
 
 [deps]
 
-source_file="res://Icons/Grass.png"
-dest_files=["res://.godot/imported/Grass.png-2bc8e2b86300096a48fb913d9c28446f.ctex"]
+source_file="res://Images/Veilstone.png"
+dest_files=["res://.godot/imported/Veilstone.png-5ac0b85d988bf7eaff97bfcd2f3d8ac3.s3tc.ctex"]
 
 [params]
 
-compress/mode=0
+compress/mode=2
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/hdr_compression=1
@@ -31,4 +32,4 @@ process/normal_map_invert_y=false
 process/hdr_as_srgb=false
 process/hdr_clamp_exposure=false
 process/size_limit=0
-detect_3d/compress_to=1
+detect_3d/compress_to=0

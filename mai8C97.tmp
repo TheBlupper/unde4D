@@ -177,8 +177,6 @@ horizontal_scroll_mode = 0
 
 [node name="Inventory" parent="CanvasLayer/VBoxContainer2/ScrollContainer" instance=ExtResource("4_s5m23")]
 layout_mode = 2
-columns = 12
-rows = 20
 
 [node name="DebugMoveLabel" type="Label" parent="CanvasLayer/VBoxContainer2"]
 layout_mode = 2

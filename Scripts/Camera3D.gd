@@ -14,11 +14,6 @@ func _ready():
 	width = get_viewport().size.x
 	gimbal2.rotate_x(deg_to_rad(-45))
 
-
-# Called every frame. 'delta' is the elapsed time since the previous frame.
-func _process(delta):
-	pass#gimbal1.position = origin
-
 var panning = false
 var pan_up = Vector3.UP
 var pan_left = Vector3.LEFT

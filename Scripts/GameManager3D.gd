@@ -31,6 +31,8 @@ extends MeshInstance3D
 @export var render_rock_checkbox: CheckButton
 @export var auto_loot_checkbox: CheckButton
 
+const Utils = preload("res://Scripts/Utils.gd")
+var utils: Utils = Utils.new()
 
 var strength_calculator = preload("res://Scripts/StrengthCalculator.cs").new()
 
@@ -45,6 +47,7 @@ var spawner_scene = preload("res://Prefabs/Spawner.tscn")
 var amethyst_scene = preload("res://Prefabs/Amethyst.tscn")
 var mystery_scene = preload("res://Prefabs/Mystery.tscn")
 var air_scene = preload("res://Prefabs/Air.tscn")
+var veilstone_scene = preload("res://Prefabs/Veilstone.tscn")
 
 var player_scene = preload("res://Prefabs/Player.tscn")
 var other_player_scene = preload("res://Prefabs/OtherPlayer.tscn")
@@ -67,21 +70,15 @@ var next_moves = []
 var cursor_material: Material
 var selected_square: Vector2
 
-var render_distance
-var render_up
-var render_down
+@onready var render_distance = render_distance_spinbox.value
+@onready var render_up = render_up_spinbox.value
+@onready var render_down = render_down_spinbox.value
 
-var cnum_re = RegEx.new()
-
-# Called when the node enters the scene tree for the first time.
 func _ready():
-	# https://stackoverflow.com/a/50428157/11239740
-	cnum_re.compile("^(?=[iI.\\d+-])(?<real>[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?(?![iI.\\d]))?(?<imag>[+-]?(?:(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?)?[iI])?$")
+	update_look_offsets()
 	
-	render_distance = render_distance_spinbox.value
-	render_up = render_up_spinbox.value
-	render_down = render_down_spinbox.value
-	update_look_offsets()	
+	inventory_controller.connect("move", move_slot_handler)
+	inventory_controller.connect("swap", swap_slots_handler)
 	
 	cursor_material = StandardMaterial3D.new()
 	cursor_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
@@ -91,10 +88,10 @@ func _ready():
 	mesh_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	mesh_material.albedo_color = 'ffffff08'
 	var grid_instance = MeshInstance3D.new()
-	var mesh = BoxMesh.new()
-	mesh.size = Vector3(13, 0.1, 13)
-	mesh.material = mesh_material
-	grid_instance.mesh = mesh
+	var grid_mesh = BoxMesh.new()
+	grid_mesh.size = Vector3(13, 0.1, 13)
+	grid_mesh.material = mesh_material
+	grid_instance.mesh = grid_mesh
 	add_child(grid_instance)
 	grid_instance.translate(Vector3(0, -0.5, 0))
 	
@@ -104,8 +101,50 @@ func _ready():
 	socket.outbound_buffer_size = 1024*1024*8
 	socket.max_queued_packets = 1024*16
 	
+func get_air_positions():
+	var air_positions = []
+	for x in range(-1, 2):
+		for y in range(-1, 2):
+			for z in range(-1, 2):
+				if x == 0 and y == 0 and z == 0: continue
+				var pos = from_world(Vector3(x, y, z))
+				if pos not in map: continue
+				if map[pos].type != "air": continue
+				air_positions.append(pos)
+	return air_positions
 
-func _process(delta):
+# this assumes that target_slot is empty, it should only be called
+# from the inventory_controller
+func move_slot_handler(source_slot: String, target_slot: String, count: int):
+	var air_positions = get_air_positions()
+	if len(air_positions) < 1: return
+	var pos = air_positions[0]
+	for i in range(count):
+		interact_4d(pos, source_slot)
+		interact_4d(pos, target_slot)
+	
+func swap_slots_handler(
+	slot1: String,
+	slot2: String,
+	temp_slot: String,
+	count1: int, count2: int):
+	var air_positions = get_air_positions()
+	if len(air_positions) < 1: return
+	var pos = air_positions[0]
+
+	for i in range(count1):
+		interact_4d(pos, slot1)
+		interact_4d(pos, temp_slot)
+		
+	for i in range(count2):
+		interact_4d(pos, slot2)
+		interact_4d(pos, slot1)
+		
+	for i in range(count1):
+		interact_4d(pos, temp_slot)
+		interact_4d(pos, slot2)
+
+func _process(_delta):
 	socket.poll()
 	var state = socket.get_ready_state()
 	if state == WebSocketPeer.STATE_OPEN:
@@ -124,11 +163,11 @@ func _process(delta):
 	var vec = get_keyboard_vec()
 	debug_move_label.text = "%d%+di %d%+di" % [vec.x, vec.z, vec.y, vec.w]
 	if interacting:
-		debug_move_label.text += " (interacting, slot %d)" % interact_slot_idx
+		debug_move_label.text += " (interacting, slot %s)" % interact_slot
 		
 var highlight_square = null
 var interacting = false
-var interact_slot_idx = -1
+var interact_slot = null
 var num_map = {
 	KEY_0: 0,
 	KEY_1: 1,
@@ -144,7 +183,9 @@ var num_map = {
 
 
 func get_selected_slot() -> String:
-	return inventory_controller.get_selected_item().slot
+	var item = inventory_controller.get_selected_item()
+	if item == null: return find_free_slot()
+	return item.slot
 
 func lookup_slot(idx: int) -> String:
 	return inventory[idx].slot
@@ -164,33 +205,42 @@ func _input(event: InputEvent) -> void:
 			if interacting:
 				interacting = false
 			else:
-				interact_slot_idx = inventory_controller.selected_idx
+				interact_slot = inventory_controller.selected_slot
 				interacting = true
 		elif event.keycode == KEY_ENTER and interacting:
-			if interact_slot_idx == -1:
+			if interact_slot == null:
 				break_4d(get_keyboard_vec())
 			else:
-				interact_4d(get_keyboard_vec(), lookup_slot(interact_slot_idx))
+				interact_4d(get_keyboard_vec(), interact_slot)
 		elif interacting and event.keycode in num_map:
 			var idx = num_map[event.keycode]
 			if idx >= len(inventory): return
-			interact_slot_idx = idx
+			interact_slot = idx
 		elif event.keycode == KEY_SPACE and interacting:
-			interact_slot_idx = -1
+			interact_slot = null
 		elif event.keycode == KEY_H and interacting:
 			var dir = get_keyboard_vec()
-			interact_4d(Vector4(dir.x, dir.y, dir.z, 0), lookup_slot(interact_slot_idx))
-			next_moves.push_front(Vector4(dir.x, dir.y, dir.z, 1))
+			break_4d(Vector4(dir.x, dir.y, 0, 1))
+			next_moves.push_back(Vector4(dir.x, dir.y, 0, 1))
+			pass
+			#var dir = get_keyboard_vec()
+			#interact_4d(Vector4(dir.x, dir.y, dir.z, 0), lookup_slot(interact_slot_idx))
+			#next_moves.push_front(Vector4(dir.x, dir.y, dir.z, 1))
+			
 		elif event.keycode == KEY_B and interacting:
 			#var dir = get_keyboard_vec()
 			#interact_4d(Vector4(dir.x, dir.y, dir.z, -1), lookup_slot(interact_slot_idx))
 			#next_moves.push_front(Vector4(dir.x, dir.y, dir.z, 0))
 			break_4d(get_keyboard_vec())
+		elif event.keycode == KEY_L:
+			for i in range(48):
+				next_moves.push_front(Vector4(0, 0, 1, 0))
 		elif event.keycode == KEY_R:
+			next_moves = []
 			for pos in map:
-				var mesh = map[pos].mesh_instance
-				if mesh != null:
-					mesh.queue_free()
+				var block_mesh = map[pos].mesh_instance
+				if block_mesh != null:
+					block_mesh.queue_free()
 			map = {}
 	
 		
@@ -207,6 +257,8 @@ func _input(event: InputEvent) -> void:
 			for ent in entities:
 				if ent.pos.x == selected_square.x and ent.pos.y == selected_square.y:
 					print(ent)
+					if ent.type in ['player', 'monster']:
+						print(utils.parse_inventory(ent.inventory))
 			
 		
 	if event is InputEventMouseMotion:
@@ -221,20 +273,13 @@ func _input(event: InputEvent) -> void:
 		
 		cursorPos += Vector3(0, 1, 0)
 		var inst = MeshInstance3D.new()
-		var mesh = BoxMesh.new()
-		mesh.material = cursor_material
-		inst.mesh = mesh
+		var cursor_mesh = BoxMesh.new()
+		cursor_mesh.material = cursor_material
+		inst.mesh = cursor_mesh
 		inst.translate(floor(cursorPos))
 		selected_square = Vector2(floor(cursorPos.x), floor(cursorPos.z))
 		add_child(inst)
 		highlight_square = inst
-
-
-func complex_to_vec(s: String) -> Vector2:
-	var m = cnum_re.search(s)
-	var imag = m.get_string("imag")
-	if imag == '+i' or imag == '-i': imag = imag.replace('i', '1')
-	return Vector2(int(m.get_string("real")), int(imag))
 
 func interact_4d(pos: Vector4, slot=-1) -> void:
 	if typeof(slot) != TYPE_STRING:
@@ -245,15 +290,6 @@ func interact_4d(pos: Vector4, slot=-1) -> void:
 		"y": "%d%+dj"%[-pos[1], pos[3]],
 		"slot": slot
 	}))
-	
-	
-var meta_keys = ["count", "mesh_instance", "slot"]
-func simplify_block(block: Dictionary):
-	var new_block = {}
-	for key in block:
-		if key in meta_keys: continue
-		new_block[key] = block[key]
-	return new_block
 
 
 func get_items_of_type(type: String) -> Array:
@@ -265,6 +301,7 @@ func get_items_of_type(type: String) -> Array:
 	
 	
 func find_free_slot() -> String:
+	return inventory_controller.find_free_slot()
 	var slot = 0
 	var failed = true
 	while failed:
@@ -275,27 +312,24 @@ func find_free_slot() -> String:
 				failed = true
 				break
 	return str(slot)
+	
 
-func hit_4d(pos: Vector4) -> void:
-	break_4d(pos)
-
-func kill_4d(pos: Vector4, hp: String, shield: int = 0) -> bool:
+func kill_4d(pos: Vector4, enemy_hp: Vector2, shield: Vector2 = Vector2.ZERO) -> bool:
 	var swords = get_items_of_type("sword")
 	swords.append({
 		'strength': '1',
 		'slot': find_free_slot()
 	})
-	var hp_vec = complex_to_vec(hp)
+	
 	var sword_vecs = []
 	for sword in swords:
-		var v = complex_to_vec(sword.strength)
-		v.x = max(v.x-shield, 0)
-		v.y = max(v.y-shield, 0)
+		var v = utils.complex_to_vec(sword.strength)
+		v.x = max(v.x-shield.x, 0)
+		v.y = max(v.y-shield.y, 0)
 		sword_vecs.append(v)
-	var solution = strength_calculator.Solve(sword_vecs, hp_vec)
+	var solution = strength_calculator.Solve(sword_vecs, enemy_hp)
 	
-	print('killing, shield=%s hp=%s, swords=%s solution=%s'%[shield, hp_vec,sword_vecs,solution])
-	
+	print('killing, shield=%s hp=%s, swords=%s solution=%s'%[shield, enemy_hp, sword_vecs, solution])
 	if solution == null or len(solution) != len(sword_vecs): return false
 	
 	for i in range(len(solution)):
@@ -307,9 +341,7 @@ func kill_4d(pos: Vector4, hp: String, shield: int = 0) -> bool:
 
 func break_4d(pos: Vector4) -> void:
 	var slot = find_free_slot()
-	var hits = 1
 	if pos in map:
-		var i = 0
 		if map[pos].type == "rock" and map[pos].get('strength') != null:
 			var pickaxes = get_items_of_type("pickaxe")
 			pickaxes.append({
@@ -318,8 +350,8 @@ func break_4d(pos: Vector4) -> void:
 			})
 			var pickaxe_vecs = []
 			for pickaxe in pickaxes:
-				pickaxe_vecs.append(complex_to_vec(pickaxe.strength))
-			var solution = strength_calculator.Solve(pickaxe_vecs, complex_to_vec(map[pos].strength))
+				pickaxe_vecs.append(utils.complex_to_vec(pickaxe.strength))
+			var solution = strength_calculator.Solve(pickaxe_vecs, utils.complex_to_vec(map[pos].strength))
 			print('breaking, strength=%s, pickaxes=%s solution=%s'%[map[pos].strength,pickaxe_vecs,solution])
 
 			if solution == null or len(solution) != len(pickaxes): return
@@ -332,7 +364,7 @@ func break_4d(pos: Vector4) -> void:
 			return
 			
 		for item in inventory:
-			if simplify_block(item) == simplify_block(map[pos]):
+			if utils.compare_blocks(item, map[pos]):
 				slot = item.slot
 	interact_4d(pos, slot)
 	
@@ -355,7 +387,12 @@ var loot_blocks = [
 	'bone_marrow',
 	'health_potion',
 	'shield',
-	'soul'
+	'soul',
+	'ventrcle',
+	'sheld',
+	'spider_legs',
+	'compass',
+	'multiplier'
 ]
 	
 func update_map(new_map: Array, offset: Vector4 = Vector4.ZERO) -> void:
@@ -369,7 +406,7 @@ func update_map(new_map: Array, offset: Vector4 = Vector4.ZERO) -> void:
 			if pos in map:
 				var prev_block = map[pos].duplicate()
 				# v stupid?
-				#prev_block.erase('mesh_instance')
+				prev_block.erase('mesh_instance')
 				if prev_block == block:
 					continue
 			
@@ -392,6 +429,8 @@ func update_map(new_map: Array, offset: Vector4 = Vector4.ZERO) -> void:
 				instance = spawner_scene.instantiate()
 			elif block.type == "amethyst":
 				instance = amethyst_scene.instantiate()
+			elif block.type == "veilstone":
+				instance = veilstone_scene.instantiate()
 			elif block.type == "mystery":
 				instance = mystery_scene.instantiate()
 			elif block.type == "tombstone":
@@ -459,7 +498,7 @@ func update_entities(new_entities: Array, offset: Vector4 = Vector4.ZERO, ignore
 				var item = entity.inventory[key].duplicate()
 				item['slot'] = key
 				inventory.append(item)
-			inventory_controller.set_items(inventory.duplicate())
+			inventory_controller.set_items(inventory)
 
 		var pos = Vector4(int(entity['x']), -int(entity['y']), 0, 0) + offset
 		var instance = null
@@ -472,12 +511,13 @@ func update_entities(new_entities: Array, offset: Vector4 = Vector4.ZERO, ignore
 		) and \
 		max(abs(pos.x), abs(pos.y)) <= 1 and \
 		(pos.x != 0 or pos.y != 0):
-			var enemy_hp = 4
-			var shield = 0
+			var enemy_hp = Vector2(4, 0)
+			var shield = Vector2.ZERO
+			var addend = 0
 			if entity.type == "monster" or entity.type == "player":
-				enemy_hp = entity.hp
-				for item in entity.inventory.values():
-					if item.type == 'shield': shield += int(item.count)	
+				enemy_hp = utils.complex_to_vec(entity.hp)
+				shield = utils.parse_inventory(entity.inventory)['shield']
+				
 			kill_4d(Vector4(pos.x, pos.y, 0, 0), enemy_hp, shield)
 		
 		if entity.type == "player":
@@ -579,16 +619,6 @@ func update_look_offsets():
 				look_offsets.append(from_world(Vector3(i*13, level, j*13)))
 	
 	look_counter = len(look_offsets)
-	return
-	var off = 1-13*floor(chunks/2) if chunks%2 == 1 else 6-13*floor(chunks/2)
-	for level in range(-int(render_down), int(render_up)+1):
-		for i in range(chunks):
-			for j in range(chunks):
-				look_offsets.append(
-					from_world(Vector3(i*13+off, level, j*13+off))
-				)
-	look_counter = len(look_offsets)
-				
 
 var look_offsets = []
 var look_counter = len(look_offsets)
@@ -597,13 +627,10 @@ var last_move_manual = false
 var last_move
 func handle_move(data: Dictionary) -> void:
 	var failed_move = true
-	var found_offset = null
 	for entity in data.entities:
 		if entity.type == "player" and entity.name == player_name:
 			if entity.x == "0" and entity.y == "0":
 				failed_move = false
-			else:
-				found_offset = Vector4(int(entity.x), int(entity.y), 0, 0)
 				
 	if look_counter < len(look_offsets):
 		var off =  look_offsets[look_counter]
@@ -616,6 +643,8 @@ func handle_move(data: Dictionary) -> void:
 		
 	if not failed_move and last_move != Vector4.ZERO:
 		# Last move succeeded
+		if len(next_moves) != 0:
+			print('moves left: %d' % len(next_moves))
 		next_moves.pop_at(0)
 		update_map(data['map'])
 		for off in look_offsets:
@@ -626,8 +655,7 @@ func handle_move(data: Dictionary) -> void:
 	if interacting: last_move = Vector4.ZERO
 	else: last_move = get_keyboard_vec()
 	if len(next_moves) != 0:
-		if next_moves[0] != null:
-			last_move = next_moves[0]
+		last_move = next_moves[0]
 	move_4d(last_move)
 
 

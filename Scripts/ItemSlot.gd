@@ -2,13 +2,17 @@ extends Panel
 
 signal selected
 signal deselected
+signal move
+signal split
 
 @export var default_color: Color = '4d4d4d67'
 @export var hover_color: Color = 'ffffff'
 @export var selected_color: Color = 'ffffff'
+@export var small_min_size: Vector2 = Vector2(40, 40)
 
 var is_hovered: bool = false
 var is_selected: bool = false
+var slot: Vector2
 
 @onready var texture_rect: TextureRect = $MarginContainer/TextureRect
 @onready var count_label: Label = $VBoxContainer/ItemCount
@@ -34,6 +38,7 @@ var icons = {
 	"soul": preload("res://Icons/Soul.png"),
 	"compass": preload("res://Icons/Compass.png"),
 	"health_potion": preload("res://Icons/HealthPotion.png"),
+	"veilstone": preload("res://Icons/Veilstone.png")
 }
 
 func _ready():
@@ -45,10 +50,9 @@ func _ready():
 	style_box.bg_color = default_color
 	add_theme_stylebox_override('panel', style_box)
 	
-
-# Called every frame. 'delta' is the elapsed time since the previous frame.
-func _process(delta):
-	pass
+func make_small():
+	custom_minimum_size = small_min_size
+	count_label.label_settings.font_size = 12
 	
 func update_tooltip():
 	if item == null:
@@ -57,7 +61,7 @@ func update_tooltip():
 	var text = item.type + "\n"
 	for key in item.keys():
 		if key in ["slot", "type", "mesh_instance", "count"]: continue
-		text += "%s = %s" % [key, item[key]]
+		text += "%s = %s\n" % [key, item[key]]
 	tooltip_text = text
 
 func select():
@@ -85,8 +89,13 @@ func clear_item():
 
 func _input(event):
 	if event is InputEventMouseButton:
-		if event.button_index == MOUSE_BUTTON_LEFT and event.pressed and is_hovered:
-			select()
+		if !event.pressed and is_hovered:
+			if event.button_index == MOUSE_BUTTON_LEFT:
+				select()
+			elif event.button_index == MOUSE_BUTTON_RIGHT:
+				emit_signal("move", self)
+			elif event.button_index == MOUSE_BUTTON_MIDDLE:
+				emit_signal("split", self)
 
 func change_bg_color(color: Color):
 	var style_box: StyleBoxFlat = get_theme_stylebox('panel').duplicate()

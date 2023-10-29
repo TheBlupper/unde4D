@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://dnx6icr66so52"
-path="res://.godot/imported/Grass.png-2bc8e2b86300096a48fb913d9c28446f.ctex"
+uid="uid://chy1byuv5rso4"
+path="res://.godot/imported/Veilstone.png-4e284202ee77f94cc67b0169fd60d1b7.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://Icons/Grass.png"
-dest_files=["res://.godot/imported/Grass.png-2bc8e2b86300096a48fb913d9c28446f.ctex"]
+source_file="res://Icons/Veilstone.png"
+dest_files=["res://.godot/imported/Veilstone.png-4e284202ee77f94cc67b0169fd60d1b7.ctex"]
 
 [params]
 
@@ -21,7 +21,7 @@ compress/lossy_quality=0.7
 compress/hdr_compression=1
 compress/normal_map=0
 compress/channel_pack=0
-mipmaps/generate=true
+mipmaps/generate=false
 mipmaps/limit=-1
 roughness/mode=0
 roughness/src_normal=""

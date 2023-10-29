@@ -4,7 +4,7 @@
 [ext_resource type="Theme" uid="uid://cw87upj6iwq6g" path="res://UIText.tres" id="2_rbnlw"]
 [ext_resource type="Script" path="res://Scripts/GameManager3D.gd" id="2_tke7g"]
 [ext_resource type="Script" path="res://Scripts/FPSCounter.gd" id="4_pkqnc"]
-[ext_resource type="PackedScene" uid="uid://bq7shgx0f08gx" path="res://Prefabs/Inventory.tscn" id="4_s5m23"]
+[ext_resource type="PackedScene" uid="uid://cyynbit724qj4" path="res://Prefabs/Inventory.tscn" id="4_s5m23"]
 [ext_resource type="Script" path="res://Scripts/SunController.gd" id="6_3ij48"]
 [ext_resource type="Script" path="res://Scripts/StrengthCalculator.cs" id="7_yv76p"]
 
@@ -170,20 +170,19 @@ offset_top = -43.0
 offset_right = 47.0
 grow_vertical = 0
 
+[node name="DebugMoveLabel" type="Label" parent="CanvasLayer/VBoxContainer2"]
+layout_mode = 2
+theme = ExtResource("2_rbnlw")
+text = "0, 0"
+
 [node name="ScrollContainer" type="ScrollContainer" parent="CanvasLayer/VBoxContainer2"]
 custom_minimum_size = Vector2(0, 300)
 layout_mode = 2
 horizontal_scroll_mode = 0
 
 [node name="Inventory" parent="CanvasLayer/VBoxContainer2/ScrollContainer" instance=ExtResource("4_s5m23")]
+visible = false
 layout_mode = 2
-columns = 12
-rows = 20
-
-[node name="DebugMoveLabel" type="Label" parent="CanvasLayer/VBoxContainer2"]
-layout_mode = 2
-theme = ExtResource("2_rbnlw")
-text = "0, 0"
 
 [node name="VBoxContainer3" type="VBoxContainer" parent="CanvasLayer"]
 anchors_preset = 1
