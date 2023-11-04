@@ -6,6 +6,11 @@ right > down
 right > up
 right > left
 down > up
+
+
+todo:
+minimize hp when kill not possible
+
 '''
 
 from collections import deque

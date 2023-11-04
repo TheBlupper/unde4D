@@ -51,11 +51,11 @@ func parse_inventory(inv: Dictionary):
 	var regen = 0
 	
 	# we use this dictionary as a hash set
-	var visited = {}
 	for soul in grid.values():
 		if soul['type'] != 'soul': continue
 		
 		# stored in pairs of (slot_position, multiplier)
+		var visited = {}
 		var queue = [[soul['slot'], 1]]
 		while len(queue):
 			var v = queue.pop_front()
@@ -70,7 +70,7 @@ func parse_inventory(inv: Dictionary):
 				var ty = item['type']
 				var count = int(item['count'])
 				if ty == 'multiplier':
-					mult += count
+					mult += 0.1*count
 					
 				elif ty == 'shield':
 					shield += Vector2(count, 0) * mult
@@ -87,7 +87,7 @@ func parse_inventory(inv: Dictionary):
 				if ty not in conductors: continue
 				queue.push_front([new_pos, mult])
 	return {
-		'shield': shield,
-		'max_hp': max_hp,
-		'regen': regen
+		'shield': Vector2(floor(shield.x), floor(shield.y)),
+		'max_hp': Vector2(floor(max_hp.x), floor(max_hp.y)),
+		'regen': floor(regen)
 	}

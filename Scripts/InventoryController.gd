@@ -22,7 +22,7 @@ var cnum_re = RegEx.new()
 func _ready():
 	# https://stackoverflow.com/a/50428157/11239740
 	cnum_re.compile("^(?=[iI.\\d+-])(?<real>[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?(?![iI.\\d]))?(?<imag>[+-]?(?:(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?)?[iI])?$")
-	
+
 	var small = false
 	if get_viewport().get_visible_rect().size.x <= 1920:
 		small = true

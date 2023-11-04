@@ -29,6 +29,7 @@ extends MeshInstance3D
 @export var render_down_spinbox: SpinBox
 @export var debug_move_label: Label
 @export var render_rock_checkbox: CheckButton
+@export var render_veilstone_checkbox: CheckButton
 @export var auto_loot_checkbox: CheckButton
 
 const Utils = preload("res://Scripts/Utils.gd")
@@ -220,14 +221,21 @@ func _input(event: InputEvent) -> void:
 			interact_slot = null
 		elif event.keycode == KEY_H and interacting:
 			var dir = get_keyboard_vec()
-			break_4d(Vector4(dir.x, dir.y, 0, 1))
-			next_moves.push_back(Vector4(dir.x, dir.y, 0, 1))
+			var pos = Vector4(dir.x, dir.y, 0, 1)
+			if pos in map:
+				break_4d(pos)
+				next_moves.push_back(pos)
 			pass
 			#var dir = get_keyboard_vec()
 			#interact_4d(Vector4(dir.x, dir.y, dir.z, 0), lookup_slot(interact_slot_idx))
 			#next_moves.push_front(Vector4(dir.x, dir.y, dir.z, 1))
 			
 		elif event.keycode == KEY_B and interacting:
+			var dir = get_keyboard_vec()
+			var pos = Vector4(dir.x, dir.y, 0, -1)
+			if pos in map:
+				break_4d(pos)
+				next_moves.push_back(pos)
 			#var dir = get_keyboard_vec()
 			#interact_4d(Vector4(dir.x, dir.y, dir.z, -1), lookup_slot(interact_slot_idx))
 			#next_moves.push_front(Vector4(dir.x, dir.y, dir.z, 0))
@@ -411,9 +419,11 @@ func update_map(new_map: Array, offset: Vector4 = Vector4.ZERO) -> void:
 					continue
 			
 			var instance = null
+			if block.type == "hypercube":
+				block.type = "veilstone"
 			if block.type == "air":
 				instance = air_scene.instantiate()
-				instance.visible = !render_rock_checkbox.button_pressed
+				instance.visible = (!render_rock_checkbox.button_pressed) or (!render_veilstone_checkbox.button_pressed)
 			elif block.type == "rock":
 				instance = rock_scene.instantiate()
 				instance.visible = render_rock_checkbox.button_pressed
@@ -429,8 +439,11 @@ func update_map(new_map: Array, offset: Vector4 = Vector4.ZERO) -> void:
 				instance = spawner_scene.instantiate()
 			elif block.type == "amethyst":
 				instance = amethyst_scene.instantiate()
+			elif block.type == "hypercube":
+				instance = veilstone_scene.instantiate()
 			elif block.type == "veilstone":
 				instance = veilstone_scene.instantiate()
+				instance.visible = render_veilstone_checkbox.button_pressed
 			elif block.type == "mystery":
 				instance = mystery_scene.instantiate()
 			elif block.type == "tombstone":
@@ -690,4 +703,14 @@ func _on_render_rock_toggled(button_pressed):
 		if block.type == "rock":
 			instance.visible = button_pressed
 		elif block.type == "air":
-			instance.visible = !button_pressed
+			instance.visible = (!button_pressed) or (!render_veilstone_checkbox.button_pressed)
+			
+func _on_render_veilstone_toggled(button_pressed):
+	for pos in map:
+		var block = map[pos]
+		if block.get('mesh_instance') == null: continue
+		var instance: MeshInstance3D = block.mesh_instance
+		if block.type == "veilstone":
+			instance.visible = button_pressed
+		elif block.type == "air":
+			instance.visible = (!button_pressed) or (!render_rock_checkbox.button_pressed)

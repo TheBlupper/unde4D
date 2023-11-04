@@ -23,7 +23,7 @@ reflected_light_source = 2
 
 [node name="Node3D" type="Node3D"]
 
-[node name="GameManager" type="MeshInstance3D" parent="." node_paths=PackedStringArray("hp_label", "xp_label", "level_label", "inventory_controller", "camera", "auto_kill_checkbox", "auto_mine_checkbox", "show_moves_checkbox", "exclude_players_checkbox", "exclude_ghosts_checkbox", "z_axis_up_checkbox", "render_distance_spinbox", "render_up_spinbox", "render_down_spinbox", "debug_move_label", "render_rock_checkbox", "auto_loot_checkbox")]
+[node name="GameManager" type="MeshInstance3D" parent="." node_paths=PackedStringArray("hp_label", "xp_label", "level_label", "inventory_controller", "camera", "auto_kill_checkbox", "auto_mine_checkbox", "show_moves_checkbox", "exclude_players_checkbox", "exclude_ghosts_checkbox", "z_axis_up_checkbox", "render_distance_spinbox", "render_up_spinbox", "render_down_spinbox", "debug_move_label", "render_rock_checkbox", "render_veilstone_checkbox", "auto_loot_checkbox")]
 script = ExtResource("2_tke7g")
 hp_label = NodePath("../CanvasLayer/VBoxContainer/HPLabel")
 xp_label = NodePath("../CanvasLayer/VBoxContainer/XPLabel")
@@ -41,6 +41,7 @@ render_up_spinbox = NodePath("../CanvasLayer/VBoxContainer/MaxUpContainer/render
 render_down_spinbox = NodePath("../CanvasLayer/VBoxContainer/MaxDownContainer/render_down")
 debug_move_label = NodePath("../CanvasLayer/VBoxContainer2/DebugMoveLabel")
 render_rock_checkbox = NodePath("../CanvasLayer/VBoxContainer/RenderRock")
+render_veilstone_checkbox = NodePath("../CanvasLayer/VBoxContainer/RenderVeilstone")
 auto_loot_checkbox = NodePath("../CanvasLayer/VBoxContainer/AutoLoot")
 
 [node name="CanvasLayer" type="CanvasLayer" parent="."]
@@ -125,6 +126,13 @@ focus_mode = 0
 theme = ExtResource("2_rbnlw")
 button_pressed = true
 text = "Render Rock"
+
+[node name="RenderVeilstone" type="CheckButton" parent="CanvasLayer/VBoxContainer"]
+layout_mode = 2
+focus_mode = 0
+theme = ExtResource("2_rbnlw")
+button_pressed = true
+text = "Render Veilstone"
 
 [node name="RenderDistanceContainer" type="HBoxContainer" parent="CanvasLayer/VBoxContainer"]
 layout_mode = 2
@@ -226,6 +234,7 @@ script = ExtResource("7_yv76p")
 [connection signal="toggled" from="CanvasLayer/VBoxContainer/z_is_up" to="GameManager" method="_on_z_is_up_toggled"]
 [connection signal="toggled" from="CanvasLayer/VBoxContainer/RenderShadows" to="WorldEnvironment/DirectionalLight3D" method="_on_render_shadows_toggled"]
 [connection signal="toggled" from="CanvasLayer/VBoxContainer/RenderRock" to="GameManager" method="_on_render_rock_toggled"]
+[connection signal="toggled" from="CanvasLayer/VBoxContainer/RenderVeilstone" to="GameManager" method="_on_render_veilstone_toggled"]
 [connection signal="value_changed" from="CanvasLayer/VBoxContainer/RenderDistanceContainer/RenderDistance" to="GameManager" method="_on_render_distance_value_changed"]
 [connection signal="value_changed" from="CanvasLayer/VBoxContainer/MaxUpContainer/render_up" to="GameManager" method="_on_render_up_value_changed"]
 [connection signal="value_changed" from="CanvasLayer/VBoxContainer/MaxDownContainer/render_down" to="GameManager" method="_on_render_down_value_changed"]
