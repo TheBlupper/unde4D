@@ -224,6 +224,10 @@ func _input(event: InputEvent) -> void:
 			next_moves.push_back(Vector4(0, 0, -1, 0))
 		elif event.keycode == KEY_L:
 			next_moves.push_back(Vector4(0, 0, 1, 0))
+		elif event.keycode == KEY_K:
+			var file = FileAccess.open('res://labyrinth_analysis/moves.json', FileAccess.READ)
+			for move_j in JSON.parse_string(file.get_as_text()):
+				next_moves.append(Vector4(move_j[0], move_j[1], move_j[2], move_j[3]))
 		elif event.keycode == KEY_H and interacting:
 			var dir = get_keyboard_vec()
 			var pos = Vector4(dir.x, dir.y, 0, 1)
@@ -247,9 +251,9 @@ func _input(event: InputEvent) -> void:
 			break_4d(get_keyboard_vec())
 				
 		elif event.keycode == KEY_F and Input.is_key_pressed(KEY_CTRL):
-			var fn = Time.get_datetime_string_from_system() + '.json'
+			var fn = Time.get_datetime_string_from_system().replace(':', '-') + '.json'
 			var file = FileAccess.open('user://' + fn, FileAccess.WRITE)
-			
+
 			var clean_map = []
 			for key in map.keys():
 				var block = map[key].duplicate()
@@ -658,7 +662,8 @@ func handle_move(data: Dictionary) -> void:
 		if entity.type == "player" and entity.name == player_name:
 			if entity.x == "0" and entity.y == "0":
 				failed_move = false
-				
+	
+	#print(look_counter, ", ", len(look_offsets))
 	if look_counter < len(look_offsets):
 		var off =  look_offsets[look_counter]
 		var view_sz = Vector4(7, 7, 0, 0)
@@ -667,12 +672,11 @@ func handle_move(data: Dictionary) -> void:
 		update_entities(data['entities'], off, true)
 		look_counter += 1
 		return
-		
 	if not failed_move and last_move != Vector4.ZERO:
 		# Last move succeeded
 		if len(next_moves) != 0:
-			print('moves left: %d' % len(next_moves))
-		next_moves.pop_at(0)
+			next_moves.pop_at(0)
+			print('just moved %s, moves left: %d' % [last_move, len(next_moves)])
 		update_map(data['map'])
 		for off in look_offsets:
 			move_4d(off)

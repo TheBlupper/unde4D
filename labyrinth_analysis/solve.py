@@ -1,11 +1,11 @@
 import json
 import os
 import pickle
+import glob
 
 def load_blocks() -> set:
     blocks = set()
-    for i in range(1, 33):
-        fn = f'{i}.json'
+    for i, fn in enumerate(sorted(os.listdir('./data/'))):
         layer = []
         with open('data/' + fn, 'r') as f:
             min_x, min_y, min_w = float('inf'), float('inf'), float('inf')
@@ -14,7 +14,7 @@ def load_blocks() -> set:
                 pos = [*eval(block['pos'])]
                 pos[0] += 16
                 pos[1] -= 1
-                pos[2] = i - 1
+                pos[2] = i
                 pos[3] += 16
 
                 if any(x<0 or x>=32 for x in pos): continue
@@ -23,14 +23,15 @@ def load_blocks() -> set:
                 if block['type'] == 'goal': continue
                 if 'timeout' in block: continue
 
-                x, y, _, w = pos
-                if x < min_x: min_x = x
-                if y < min_y: min_y = y
-                if w < min_w: min_w = w
+                if block['type'] == 'veilstone':
+                    x, y, _, w = pos
+                    if x < min_x: min_x = x
+                    if y < min_y: min_y = y
+                    if w < min_w: min_w = w
 
-                if x > max_x: max_x = x
-                if y > max_y: max_y = y
-                if w > max_w: max_w = w
+                    if x > max_x: max_x = x
+                    if y > max_y: max_y = y
+                    if w > max_w: max_w = w
 
                 blocks.add(tuple(pos))
         print(i, len(layer), min_x, max_x, min_y, max_y, min_w, max_w)
@@ -42,15 +43,15 @@ if False:
         pickle.dump(blocks, f)
 else:
     blocks = pickle.load(open('blocks.pkl', 'rb'))
-print(len(blocks))
+
 paths = []
 # Find the shortest path through the maze from the origin to the end
 # without passing through any blocks.
 
-origin = (3, 31-4, 3, 16)
+origin = (0, 30, 1, 1)
 target = (16, 16, 16, 16)
-assert origin not in blocks
-assert target not in blocks
+#assert origin not in blocks
+#assert target not in blocks
 
 # Find the shortest path from origin to target without passing through any blocks
 # using dijkstras algorithm
@@ -68,10 +69,6 @@ def neighbors(node):
                            (0, 0, 0, 1), (0, 0, 0, -1)]:
         yield (x + dx, y + dy, z + dz, w + dw)
 
-def is_valid(node):
-    if node in blocks: return False
-    if any(x < 0 or x >= 32 for x in node): return False
-    return True
     
 def dist(a, b):
     return sum(abs(x - y) for x, y in zip(a, b))
@@ -86,6 +83,11 @@ def recover_path(came_from, current):
         path.append(current)
     path.reverse()
     return path
+
+def is_valid(node):
+    if node in blocks: return False
+    if any(x < 0 or x >= 32 for x in node): return False
+    return True
 
 from collections import deque
 def dijkstra(start, end):
@@ -114,6 +116,10 @@ def dijkstra(start, end):
             queue.append(neighbor)
 
     return recover_path(came_from, end)
+
+def invert(node):
+    return [-node[0], -node[1], -node[2], -node[3]]
+
 path = dijkstra(origin, target)
 deltas = []
 prev = path[0]
@@ -128,21 +134,21 @@ import matplotlib.pyplot as plt
 fig = plt.figure()
 ax = fig.add_subplot(projection='3d')
 ax.plot(X, Y, Z)
+plt.show()
 
 def to_str(delta):
     x, y, z, w = delta
-    moves = []
-    if x == 1: moves.append('right')
-    if x == -1: moves.append('left')
-    if y == -1: moves.append('up')
-    if y == 1: moves.append('down')
-    if z == -1: moves.append('a')
-    if z == 1: moves.append('d')
-    if w == 1: moves.append('w')
-    if w == -1: moves.append('s')
-    return ' '.join(moves)
+    out = ''
+    out += ['left', '', 'right'][x + 1]
+    out += ['up', '', 'down'][y + 1]
+    out += ['a', '', 'd'][z + 1]
+    out += ['s', '', 'w'][w + 1]
+    return out
 
-for i, delta in enumerate(deltas[:100]):
+for i, delta in enumerate(deltas[:10]):
     print(i, to_str(delta))
+
 print('shortest path:', len(deltas))
-plt.show()
+
+with open('moves.json', 'w') as f:
+    json.dump(deltas, f)
