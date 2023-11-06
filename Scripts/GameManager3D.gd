@@ -194,11 +194,10 @@ func lookup_slot(idx: int) -> String:
 func _input(event: InputEvent) -> void:
 	# Key Pressed
 	if event is InputEventKey and event.pressed:
-		if event.keycode == KEY_K and hp.is_valid_int():
-			for i in range(hp+1):
-				break_4d(Vector4.ZERO)
-		elif event.keycode == KEY_I:
+		if event.keycode == KEY_I:
 			break_4d(Vector4(0, 0, 0, -1))
+		if event.keycode == KEY_O:
+			break_4d(Vector4(0, 0, 0, 1))
 	
 	# Key Released
 	if event is InputEventKey and !event.pressed:
@@ -213,12 +212,18 @@ func _input(event: InputEvent) -> void:
 				break_4d(get_keyboard_vec())
 			else:
 				interact_4d(get_keyboard_vec(), interact_slot)
+		elif event.keycode == KEY_M and interacting:
+			next_moves.push_back(get_keyboard_vec())
 		elif interacting and event.keycode in num_map:
 			var idx = num_map[event.keycode]
 			if idx >= len(inventory): return
 			interact_slot = idx
 		elif event.keycode == KEY_SPACE and interacting:
 			interact_slot = null
+		elif event.keycode == KEY_J:
+			next_moves.push_back(Vector4(0, 0, -1, 0))
+		elif event.keycode == KEY_L:
+			next_moves.push_back(Vector4(0, 0, 1, 0))
 		elif event.keycode == KEY_H and interacting:
 			var dir = get_keyboard_vec()
 			var pos = Vector4(dir.x, dir.y, 0, 1)
@@ -240,9 +245,19 @@ func _input(event: InputEvent) -> void:
 			#interact_4d(Vector4(dir.x, dir.y, dir.z, -1), lookup_slot(interact_slot_idx))
 			#next_moves.push_front(Vector4(dir.x, dir.y, dir.z, 0))
 			break_4d(get_keyboard_vec())
-		elif event.keycode == KEY_L:
-			for i in range(48):
-				next_moves.push_front(Vector4(0, 0, 1, 0))
+				
+		elif event.keycode == KEY_F and Input.is_key_pressed(KEY_CTRL):
+			var fn = Time.get_datetime_string_from_system() + '.json'
+			var file = FileAccess.open('user://' + fn, FileAccess.WRITE)
+			
+			var clean_map = []
+			for key in map.keys():
+				var block = map[key].duplicate()
+				block.erase('mesh_instance')
+				block['pos'] = key
+				clean_map.append(block)
+				
+			file.store_string(JSON.stringify(clean_map))
 		elif event.keycode == KEY_R:
 			next_moves = []
 			for pos in map:
@@ -404,7 +419,6 @@ var loot_blocks = [
 ]
 	
 func update_map(new_map: Array, offset: Vector4 = Vector4.ZERO) -> void:
-	
 	for y in range(6, -7, -1):
 		for x in range(6, -7, -1):
 			var block = new_map[14-(y+7)][x+7]

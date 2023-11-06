@@ -6,6 +6,7 @@ signal swap
 signal move
 
 @export var rows: int = 10
+@export var small: bool = false
 
 const Utils = preload("res://Scripts/Utils.gd")
 var utils = Utils.new()
@@ -22,10 +23,6 @@ var cnum_re = RegEx.new()
 func _ready():
 	# https://stackoverflow.com/a/50428157/11239740
 	cnum_re.compile("^(?=[iI.\\d+-])(?<real>[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?(?![iI.\\d]))?(?<imag>[+-]?(?:(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?)?[iI])?$")
-
-	var small = false
-	if get_viewport().get_visible_rect().size.x <= 1920:
-		small = true
 		
 	for im in range(rows):
 		var row = []

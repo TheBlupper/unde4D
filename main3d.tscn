@@ -179,7 +179,7 @@ offset_right = 47.0
 grow_vertical = 0
 
 [node name="ScrollContainer" type="ScrollContainer" parent="CanvasLayer/VBoxContainer2"]
-custom_minimum_size = Vector2(0, 300)
+custom_minimum_size = Vector2(0, 500)
 layout_mode = 2
 horizontal_scroll_mode = 0
 
