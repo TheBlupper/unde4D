@@ -30,11 +30,10 @@ extends MeshInstance3D
 @export var render_rock_checkbox: CheckButton
 @export var render_hypercube_checkbox: CheckButton
 @export var auto_loot_checkbox: CheckButton
+@export var mouse_tooltip: MouseTooltip
 
 const Utils = preload("res://Scripts/Utils.gd")
 var utils: Utils = Utils.new()
-
-var strength_calculator = preload("res://Scripts/StrengthCalculator.cs").new()
 
 var concrete_scene = preload("res://Prefabs/Concrete.tscn")
 var rock_scene = preload("res://Prefabs/Rock.tscn")
@@ -85,16 +84,16 @@ func _ready():
 	cursor_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	cursor_material.albedo_color = 'ffffff20'
 	
-	var mesh_material = StandardMaterial3D.new()
-	mesh_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	mesh_material.albedo_color = 'ffffff08'
-	var grid_instance = MeshInstance3D.new()
-	var grid_mesh = BoxMesh.new()
-	grid_mesh.size = Vector3(13, 0.1, 13)
-	grid_mesh.material = mesh_material
-	grid_instance.mesh = grid_mesh
-	add_child(grid_instance)
-	grid_instance.translate(Vector3(0, -0.5, 0))
+	#var mesh_material = StandardMaterial3D.new()
+	#mesh_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	#mesh_material.albedo_color = 'ffffff08'
+	#var grid_instance = MeshInstance3D.new()
+	#var grid_mesh = BoxMesh.new()
+	#grid_mesh.size = Vector3(13, 0.1, 13)
+	#grid_mesh.material = mesh_material
+	#grid_instance.mesh = grid_mesh
+	#add_child(grid_instance)
+	#grid_instance.translate(Vector3(0, -0.5, 0))
 	
 	print("Connecting...")
 	socket.connect_to_url(websocket_url)
@@ -167,9 +166,9 @@ func _process(_delta):
 		debug_move_label.text += " (interacting, slot %s)" % interact_slot
 		
 var highlight_square = null
-var prev_square_coord = Vector2i(0, 0)
 var interacting = false
 var interact_slot = null
+var last_tooltip_ent = null
 var num_map = {
 	KEY_0: 0,
 	KEY_1: 1,
@@ -297,8 +296,22 @@ func _input(event: InputEvent) -> void:
 		selected_square = Vector2(floor(cursorPos.x), floor(cursorPos.z))
 		add_child(inst)
 		highlight_square = inst
-		prev_square_coord = Vector2(floor(cursorPos.x), floor(cursorPos.z))
-		print(prev_square_coord)
+		
+		var pos = Vector4(floor(cursorPos.x), floor(cursorPos.z), 0, 0)
+		
+		var found = false
+		for ent in entities:
+			if ent.pos == pos:
+				found = true
+				if last_tooltip_ent != ent:
+					
+					mouse_tooltip.display_entity(ent)
+				if mouse_tooltip.hidden: mouse_tooltip.show()
+				last_tooltip_ent = ent
+
+		if not found:
+			last_tooltip_ent = null
+			mouse_tooltip.hide()
 
 func interact_4d(pos: Vector4, slot=-1) -> void:
 	if typeof(slot) != TYPE_STRING:
@@ -331,7 +344,7 @@ func find_free_slot() -> String:
 				failed = true
 				break
 	return str(slot)
-	
+
 
 func kill_4d(pos: Vector4, enemy_hp: Vector2, shield: Vector2 = Vector2.ZERO) -> bool:
 	var swords = get_items_of_type("sword")
@@ -346,7 +359,7 @@ func kill_4d(pos: Vector4, enemy_hp: Vector2, shield: Vector2 = Vector2.ZERO) ->
 		v.x = max(v.x-shield.x, 0)
 		v.y = max(v.y-shield.y, 0)
 		sword_vecs.append(v)
-	var solution = strength_calculator.Solve(sword_vecs, enemy_hp)
+	var solution = StrengthCalculator.Solve(sword_vecs, enemy_hp)
 	
 	print('killing, shield=%s hp=%s, swords=%s solution=%s'%[shield, enemy_hp, sword_vecs, solution])
 	if solution == null or len(solution) != len(sword_vecs): return false
@@ -370,7 +383,7 @@ func break_4d(pos: Vector4) -> void:
 			var pickaxe_vecs = []
 			for pickaxe in pickaxes:
 				pickaxe_vecs.append(utils.complex_to_vec(pickaxe.strength))
-			var solution = strength_calculator.Solve(pickaxe_vecs, utils.complex_to_vec(map[pos].strength))
+			var solution = StrengthCalculator.Solve(pickaxe_vecs, utils.complex_to_vec(map[pos].strength))
 			print('breaking, strength=%s, pickaxes=%s solution=%s'%[map[pos].strength,pickaxe_vecs,solution])
 
 			if solution == null or len(solution) != len(pickaxes): return

@@ -1,0 +1,50 @@
+[gd_scene load_steps=3 format=3 uid="uid://cnydhbjntqsaa"]
+
+[ext_resource type="Script" path="res://Scripts/MouseTooltip.gd" id="1_voqkp"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_jid25"]
+bg_color = Color(0.054902, 0.054902, 0.054902, 0.443137)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
+shadow_color = Color(0, 0, 0, 0.0941176)
+shadow_size = 1
+shadow_offset = Vector2(2.04, 2.48)
+
+[node name="MouseTooltip" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_voqkp")
+
+[node name="PanelContainer" type="PanelContainer" parent="."]
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 40.0
+theme_override_styles/panel = SubResource("StyleBoxFlat_jid25")
+
+[node name="MarginContainer" type="MarginContainer" parent="PanelContainer"]
+layout_mode = 2
+theme_override_constants/margin_left = 7
+theme_override_constants/margin_top = 7
+theme_override_constants/margin_right = 7
+theme_override_constants/margin_bottom = 7
+
+[node name="RichTextLabel" type="RichTextLabel" parent="PanelContainer/MarginContainer"]
+layout_mode = 2
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 1)
+theme_override_constants/shadow_offset_x = 1
+theme_override_constants/shadow_offset_y = 1
+theme_override_constants/shadow_outline_size = 2
+bbcode_enabled = true
+text = "jkgyuh
+dfgdsfj
+ghjk
+dsfgjhhjhjhkh
+sdfkgh"
+fit_content = true
+autowrap_mode = 0

@@ -1,4 +1,4 @@
-[gd_scene load_steps=13 format=3 uid="uid://b17agn6fu0lio"]
+[gd_scene load_steps=14 format=3 uid="uid://b17agn6fu0lio"]
 
 [ext_resource type="Script" path="res://Scripts/Camera3D.gd" id="1_vrx8j"]
 [ext_resource type="Theme" uid="uid://cw87upj6iwq6g" path="res://UIText.tres" id="2_rbnlw"]
@@ -8,6 +8,7 @@
 [ext_resource type="PackedScene" uid="uid://bq7shgx0f08gx" path="res://Prefabs/Inventory.tscn" id="4_s5m23"]
 [ext_resource type="Script" path="res://Scripts/InventoryScrollContainer.gd" id="4_x0j0l"]
 [ext_resource type="Script" path="res://Scripts/SunController.gd" id="6_3ij48"]
+[ext_resource type="PackedScene" uid="uid://cnydhbjntqsaa" path="res://Prefabs/MouseTooltip.tscn" id="7_2xdsx"]
 [ext_resource type="Script" path="res://Scripts/StrengthCalculator.cs" id="7_yv76p"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_6qph1"]
@@ -25,7 +26,7 @@ reflected_light_source = 2
 
 [node name="Node3D" type="Node3D"]
 
-[node name="GameManager" type="MeshInstance3D" parent="." node_paths=PackedStringArray("hp_label", "xp_label", "level_label", "inventory_controller", "camera", "auto_kill_checkbox", "auto_mine_checkbox", "exclude_players_checkbox", "exclude_ghosts_checkbox", "z_axis_up_checkbox", "render_distance_spinbox", "render_up_spinbox", "render_down_spinbox", "debug_move_label", "render_rock_checkbox", "render_hypercube_checkbox", "auto_loot_checkbox")]
+[node name="GameManager" type="MeshInstance3D" parent="." node_paths=PackedStringArray("hp_label", "xp_label", "level_label", "inventory_controller", "camera", "auto_kill_checkbox", "auto_mine_checkbox", "exclude_players_checkbox", "exclude_ghosts_checkbox", "z_axis_up_checkbox", "render_distance_spinbox", "render_up_spinbox", "render_down_spinbox", "debug_move_label", "render_rock_checkbox", "render_hypercube_checkbox", "auto_loot_checkbox", "mouse_tooltip")]
 script = ExtResource("2_tke7g")
 hp_label = NodePath("../CanvasLayer/VBoxContainer/HPLabel")
 xp_label = NodePath("../CanvasLayer/VBoxContainer/XPLabel")
@@ -44,6 +45,7 @@ debug_move_label = NodePath("../CanvasLayer/VBoxContainer2/DebugMoveLabel")
 render_rock_checkbox = NodePath("../CanvasLayer/VBoxContainer/RenderRock")
 render_hypercube_checkbox = NodePath("../CanvasLayer/VBoxContainer/RenderHypercube")
 auto_loot_checkbox = NodePath("../CanvasLayer/VBoxContainer/AutoLoot")
+mouse_tooltip = NodePath("../MouseTooltip")
 
 [node name="CanvasLayer" type="CanvasLayer" parent="."]
 
@@ -215,6 +217,8 @@ layout_mode = 2
 theme = ExtResource("2_rbnlw")
 text = "FPS"
 script = ExtResource("4_pkqnc")
+
+[node name="MouseTooltip" parent="." instance=ExtResource("7_2xdsx")]
 
 [node name="Gimbal1" type="Node3D" parent="."]
 

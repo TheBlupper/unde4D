@@ -2,15 +2,15 @@
 
 [ext_resource type="Script" path="res://Scripts/StatsDisplay.gd" id="1_xu100"]
 
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_q4fcv"]
-albedo_color = Color(0, 0.74902, 0.2, 1)
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_vtyb8"]
+albedo_color = Color(0.0666667, 0.862745, 0.278431, 1)
 
-[sub_resource type="CapsuleMesh" id="CapsuleMesh_01yhf"]
-material = SubResource("StandardMaterial3D_q4fcv")
+[sub_resource type="CapsuleMesh" id="CapsuleMesh_6vl1b"]
+material = SubResource("StandardMaterial3D_vtyb8")
 radius = 0.4
 height = 1.0
 
 [node name="MeshInstance3D" type="MeshInstance3D"]
-mesh = SubResource("CapsuleMesh_01yhf")
+mesh = SubResource("CapsuleMesh_6vl1b")
 script = ExtResource("1_xu100")
 offset = 1.3
