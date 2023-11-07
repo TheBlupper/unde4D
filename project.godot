@@ -13,7 +13,10 @@ config_version=5
 config/name="unde4D"
 run/main_scene="res://main3d.tscn"
 config/features=PackedStringArray("4.1", "C#", "Forward Plus")
-config/icon="res://icon.svg"
+
+[autoload]
+
+Utils="*res://Scripts/Utils.gd"
 
 [display]
 

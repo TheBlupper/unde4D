@@ -20,7 +20,6 @@ extends MeshInstance3D
 @export var camera: Camera3D
 @export var auto_kill_checkbox: CheckButton
 @export var auto_mine_checkbox: CheckButton
-@export var show_moves_checkbox: CheckButton
 @export var exclude_players_checkbox: CheckButton
 @export var exclude_ghosts_checkbox: CheckButton
 @export var z_axis_up_checkbox: CheckButton
@@ -29,7 +28,7 @@ extends MeshInstance3D
 @export var render_down_spinbox: SpinBox
 @export var debug_move_label: Label
 @export var render_rock_checkbox: CheckButton
-@export var render_veilstone_checkbox: CheckButton
+@export var render_hypercube_checkbox: CheckButton
 @export var auto_loot_checkbox: CheckButton
 
 const Utils = preload("res://Scripts/Utils.gd")
@@ -48,6 +47,7 @@ var spawner_scene = preload("res://Prefabs/Spawner.tscn")
 var amethyst_scene = preload("res://Prefabs/Amethyst.tscn")
 var mystery_scene = preload("res://Prefabs/Mystery.tscn")
 var air_scene = preload("res://Prefabs/Air.tscn")
+var hypercube_scene = preload("res://Prefabs/Hypercube.tscn")
 var veilstone_scene = preload("res://Prefabs/Veilstone.tscn")
 
 var player_scene = preload("res://Prefabs/Player.tscn")
@@ -167,6 +167,7 @@ func _process(_delta):
 		debug_move_label.text += " (interacting, slot %s)" % interact_slot
 		
 var highlight_square = null
+var prev_square_coord = Vector2i(0, 0)
 var interacting = false
 var interact_slot = null
 var num_map = {
@@ -224,20 +225,12 @@ func _input(event: InputEvent) -> void:
 			next_moves.push_back(Vector4(0, 0, -1, 0))
 		elif event.keycode == KEY_L:
 			next_moves.push_back(Vector4(0, 0, 1, 0))
-		elif event.keycode == KEY_K:
-			var file = FileAccess.open('res://labyrinth_analysis/moves.json', FileAccess.READ)
-			for move_j in JSON.parse_string(file.get_as_text()):
-				next_moves.append(Vector4(move_j[0], move_j[1], move_j[2], move_j[3]))
 		elif event.keycode == KEY_H and interacting:
 			var dir = get_keyboard_vec()
 			var pos = Vector4(dir.x, dir.y, 0, 1)
 			if pos in map:
 				break_4d(pos)
 				next_moves.push_back(pos)
-			pass
-			#var dir = get_keyboard_vec()
-			#interact_4d(Vector4(dir.x, dir.y, dir.z, 0), lookup_slot(interact_slot_idx))
-			#next_moves.push_front(Vector4(dir.x, dir.y, dir.z, 1))
 			
 		elif event.keycode == KEY_B and interacting:
 			var dir = get_keyboard_vec()
@@ -245,9 +238,6 @@ func _input(event: InputEvent) -> void:
 			if pos in map:
 				break_4d(pos)
 				next_moves.push_back(pos)
-			#var dir = get_keyboard_vec()
-			#interact_4d(Vector4(dir.x, dir.y, dir.z, -1), lookup_slot(interact_slot_idx))
-			#next_moves.push_front(Vector4(dir.x, dir.y, dir.z, 0))
 			break_4d(get_keyboard_vec())
 				
 		elif event.keycode == KEY_F and Input.is_key_pressed(KEY_CTRL):
@@ -307,6 +297,8 @@ func _input(event: InputEvent) -> void:
 		selected_square = Vector2(floor(cursorPos.x), floor(cursorPos.z))
 		add_child(inst)
 		highlight_square = inst
+		prev_square_coord = Vector2(floor(cursorPos.x), floor(cursorPos.z))
+		print(prev_square_coord)
 
 func interact_4d(pos: Vector4, slot=-1) -> void:
 	if typeof(slot) != TYPE_STRING:
@@ -437,11 +429,9 @@ func update_map(new_map: Array, offset: Vector4 = Vector4.ZERO) -> void:
 					continue
 			
 			var instance = null
-			if block.type == "hypercube":
-				block.type = "veilstone"
 			if block.type == "air":
 				instance = air_scene.instantiate()
-				instance.visible = (!render_rock_checkbox.button_pressed) or (!render_veilstone_checkbox.button_pressed)
+				instance.visible = (!render_rock_checkbox.button_pressed) or (!render_hypercube_checkbox.button_pressed)
 			elif block.type == "rock":
 				instance = rock_scene.instantiate()
 				instance.visible = render_rock_checkbox.button_pressed
@@ -458,10 +448,10 @@ func update_map(new_map: Array, offset: Vector4 = Vector4.ZERO) -> void:
 			elif block.type == "amethyst":
 				instance = amethyst_scene.instantiate()
 			elif block.type == "hypercube":
-				instance = veilstone_scene.instantiate()
+				instance = hypercube_scene.instantiate()
+				instance.visible = render_hypercube_checkbox.button_pressed
 			elif block.type == "veilstone":
 				instance = veilstone_scene.instantiate()
-				instance.visible = render_veilstone_checkbox.button_pressed
 			elif block.type == "mystery":
 				instance = mystery_scene.instantiate()
 			elif block.type == "tombstone":
@@ -651,6 +641,11 @@ func update_look_offsets():
 	
 	look_counter = len(look_offsets)
 
+func look_around():
+	for off in look_offsets:
+		move_4d(off)
+	look_counter = 0
+
 var look_offsets = []
 var look_counter = len(look_offsets)
 var last_move_manual = false
@@ -663,7 +658,6 @@ func handle_move(data: Dictionary) -> void:
 			if entity.x == "0" and entity.y == "0":
 				failed_move = false
 	
-	#print(look_counter, ", ", len(look_offsets))
 	if look_counter < len(look_offsets):
 		var off =  look_offsets[look_counter]
 		var view_sz = Vector4(7, 7, 0, 0)
@@ -676,11 +670,9 @@ func handle_move(data: Dictionary) -> void:
 		# Last move succeeded
 		if len(next_moves) != 0:
 			next_moves.pop_at(0)
-			print('just moved %s, moves left: %d' % [last_move, len(next_moves)])
+			print('moves left: %d' % [last_move, len(next_moves)])
 		update_map(data['map'])
-		for off in look_offsets:
-			move_4d(off)
-		look_counter = 0
+		look_around()
 
 	last_move = null
 	if interacting: last_move = Vector4.ZERO
@@ -721,14 +713,22 @@ func _on_render_rock_toggled(button_pressed):
 		if block.type == "rock":
 			instance.visible = button_pressed
 		elif block.type == "air":
-			instance.visible = (!button_pressed) or (!render_veilstone_checkbox.button_pressed)
+			instance.visible = (!button_pressed) or (!render_hypercube_checkbox.button_pressed)
 			
-func _on_render_veilstone_toggled(button_pressed):
+func _on_render_hypercube_toggled(button_pressed):
 	for pos in map:
 		var block = map[pos]
 		if block.get('mesh_instance') == null: continue
 		var instance: MeshInstance3D = block.mesh_instance
-		if block.type == "veilstone":
+		if block.type == "hypercube":
 			instance.visible = button_pressed
 		elif block.type == "air":
 			instance.visible = (!button_pressed) or (!render_rock_checkbox.button_pressed)
+
+# When a moves.json file is selected
+func _on_file_dialog_file_selected(path):
+	var file = FileAccess.open(path, FileAccess.READ)
+	
+	# I'm sure the format is already fine, yolo
+	for move_j in JSON.parse_string(file.get_as_text()):
+		next_moves.append(Vector4(move_j[0], move_j[1], move_j[2], move_j[3]))

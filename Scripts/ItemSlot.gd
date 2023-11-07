@@ -34,7 +34,7 @@ var icons = {
 	"ventricle": preload("res://Icons/Ventricle.png"),
 	"bone_marrow": preload("res://Icons/BoneMarrow.png"),
 	"shield": preload("res://Icons/Shield.png"),
-	"spider_legs": preload("res://Icons/Compass.png"),
+	"spider_legs": preload("res://Icons/SpiderLegs.png"),
 	"soul": preload("res://Icons/Soul.png"),
 	"compass": preload("res://Icons/Compass.png"),
 	"health_potion": preload("res://Icons/HealthPotion.png"),

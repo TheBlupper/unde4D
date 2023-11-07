@@ -6,10 +6,6 @@ signal swap
 signal move
 
 @export var rows: int = 10
-@export var small: bool = false
-
-const Utils = preload("res://Scripts/Utils.gd")
-var utils = Utils.new()
 
 var item_slot_scene = preload('res://Prefabs/ItemSlot.tscn')
 
@@ -30,7 +26,7 @@ func _ready():
 			var instance: Panel = item_slot_scene.instantiate()
 			instance.slot = Vector2(re, im)
 			add_child(instance)
-			if small: instance.make_small()
+			if Utils.small: instance.make_small()
 			instance.connect('split', split_handler)
 			instance.connect('selected', selected_handler)
 			instance.connect('move', move_handler)
@@ -52,7 +48,7 @@ func split_handler(target):
 	var source = slot_arr[selected_idx]
 	if source.slot == target.slot: return
 	if source.item == null: return
-	if not (target.item == null or utils.compare_blocks(source.item, target.item)):
+	if not (target.item == null or Utils.compare_blocks(source.item, target.item)):
 		return
 	emit_signal("move",
 		vec_to_string(source.slot),
@@ -67,7 +63,7 @@ func move_handler(target):
 	
 	source.deselect()
 	target.select()
-	if target.item == null or utils.compare_blocks(source.item, target.item):
+	if target.item == null or Utils.compare_blocks(source.item, target.item):
 		emit_signal("move",
 			vec_to_string(source.slot),
 			vec_to_string(target.slot),
@@ -92,7 +88,8 @@ func selected_handler(sender):
 func set_items(items: Array):
 	var item_map = {}
 	for item in items:
-		item_map[utils.complex_to_vec(item.slot)] = item
+		item_map[Utils.complex_to_vec(item.slot)] = item
+		
 	for im in range(rows):
 		for re in range(columns):
 			var slot = Vector2(re, im)

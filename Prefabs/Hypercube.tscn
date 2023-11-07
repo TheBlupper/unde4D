@@ -1,0 +1,15 @@
+[gd_scene load_steps=4 format=3 uid="uid://cdi2impg8gwdm"]
+
+[ext_resource type="Texture2D" uid="uid://bkrpy0nbjtjsi" path="res://Images/Obsidian.png" id="1_yxixe"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_hdvmy"]
+albedo_texture = ExtResource("1_yxixe")
+metallic_specular = 0.0
+uv1_scale = Vector3(3, 2, 1)
+texture_filter = 0
+
+[sub_resource type="BoxMesh" id="BoxMesh_n4n4v"]
+material = SubResource("StandardMaterial3D_hdvmy")
+
+[node name="MeshInstance3D" type="MeshInstance3D"]
+mesh = SubResource("BoxMesh_n4n4v")

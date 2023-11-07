@@ -1,10 +1,13 @@
 extends Node
 
-class_name Utils
+# Whether we are on a poor persons screen or not
+var small = true
 
 var cnum_re = RegEx.new()
 
 func _init():
+	small = DisplayServer.screen_get_size().x <= 1920
+	
 	# https://stackoverflow.com/a/50428157/11239740
 	cnum_re.compile("^(?=[iI.\\d+-])(?<real>[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?(?![iI.\\d]))?(?<imag>[+-]?(?:(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?)?[iI])?$")
 
@@ -14,6 +17,9 @@ func complex_to_vec(s: String) -> Vector2:
 	if imag == '+i' or imag == '-i' or imag == 'i': imag = imag.replace('i', '1')
 	return Vector2(int(m.get_string("real")), int(imag))
 
+
+# This is for comparing if two items/blocks are the same,
+# to check if the stack for example
 var meta_keys = ["count", "mesh_instance", "slot"]
 func simplify_block(block: Dictionary):
 	var new_block = {}

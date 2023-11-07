@@ -4,12 +4,6 @@ using Google.OrTools.LinearSolver;
 
 public partial class StrengthCalculator : Node
 {
-	// Called when the node enters the scene tree for the first time.
-	public override void _Ready()
-	{
-		GD.Print("Hello from C#!");
-	}
-
 	public int[] Solve(Vector2[] strengths, Vector2 target) {
 		int n = strengths.Length;
 		Solver solver = Solver.CreateSolver("SCIP");
@@ -21,7 +15,9 @@ public partial class StrengthCalculator : Node
 				constraint.SetCoefficient(coeffs[j], strengths[j][i]);
 			}
 		}
+		
 		Objective objective = solver.Objective();
+		
 		// Minimize total amount of hits
 		for (int i = 0; i < n; i++) {
 			objective.SetCoefficient(coeffs[i], 1);
