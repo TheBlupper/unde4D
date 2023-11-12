@@ -1,4 +1,4 @@
-# UNDE4D
+# unde4D
 
 An entry into [Kodsport's](https://www.kodsport.se/) Halloween competition 2023. The goal was to build a client for a server we were not the given source code of. The game is 4-dimensional, hence the name. For the code, viewer discretion is advised.
 
