@@ -38,7 +38,8 @@ var icons = {
 	"soul": preload("res://Icons/Soul.png"),
 	"compass": preload("res://Icons/Compass.png"),
 	"health_potion": preload("res://Icons/HealthPotion.png"),
-	"veilstone": preload("res://Icons/Veilstone.png")
+	"veilstone": preload("res://Icons/Veilstone.png"),
+	"tombstone": preload("res://Icons/Tombstone.png")
 }
 
 func _ready():

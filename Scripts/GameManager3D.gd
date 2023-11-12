@@ -1,21 +1,13 @@
 extends MeshInstance3D
 
-@export_group("Textures")
-@export var ghost_texture: Texture
-@export var monster_texture: Texture
-@export var player_texture: Texture
-@export var other_player_texture: Texture
-@export var unknown_texture: Texture
-@export var tombstone_texture: Texture
-
-@export_group("Random stuff")
-@export var font: Font
+@export_group("Other")
+@export var websocket_url = "wss://daydun.com:666/"
+@export var player_name = "blupper";
 
 @export_group("Nodes")
 @export var hp_label: Label
 @export var xp_label: Label
 @export var level_label: Label
-#@export var inventory_list: ItemList
 @export var inventory_controller: InventoryController
 @export var camera: Camera3D
 @export var auto_kill_checkbox: CheckButton
@@ -31,6 +23,7 @@ extends MeshInstance3D
 @export var render_hypercube_checkbox: CheckButton
 @export var auto_loot_checkbox: CheckButton
 @export var mouse_tooltip: MouseTooltip
+@export var help_dialog: AcceptDialog
 
 const Utils = preload("res://Scripts/Utils.gd")
 var utils: Utils = Utils.new()
@@ -54,9 +47,6 @@ var other_player_scene = preload("res://Prefabs/OtherPlayer.tscn")
 var enemy_scene = preload("res://Prefabs/Enemy.tscn")
 var ghost_scene = preload("res://Prefabs/Ghost.tscn")
 var unknown_entity_scene = preload("res://Prefabs/UnknownEntity.tscn")
-
-var websocket_url = "wss://daydun.com:666/"
-var player_name = "blupper";
 
 var socket = WebSocketPeer.new()
 
@@ -83,17 +73,6 @@ func _ready():
 	cursor_material = StandardMaterial3D.new()
 	cursor_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	cursor_material.albedo_color = 'ffffff20'
-	
-	#var mesh_material = StandardMaterial3D.new()
-	#mesh_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	#mesh_material.albedo_color = 'ffffff08'
-	#var grid_instance = MeshInstance3D.new()
-	#var grid_mesh = BoxMesh.new()
-	#grid_mesh.size = Vector3(13, 0.1, 13)
-	#grid_mesh.material = mesh_material
-	#grid_instance.mesh = grid_mesh
-	#add_child(grid_instance)
-	#grid_instance.translate(Vector3(0, -0.5, 0))
 	
 	print("Connecting...")
 	socket.connect_to_url(websocket_url)
@@ -163,7 +142,11 @@ func _process(_delta):
 	var vec = get_keyboard_vec()
 	debug_move_label.text = "%d%+di %d%+di" % [vec.x, vec.z, vec.y, vec.w]
 	if interacting:
-		debug_move_label.text += " (interacting, slot %s)" % interact_slot
+		debug_move_label.text += " (interacting, "
+		if interact_slot == null:
+			debug_move_label.text += 'breaking)'
+		else:
+			debug_move_label.text += '%s)' % interact_slot
 		
 var highlight_square = null
 var interacting = false
@@ -217,19 +200,20 @@ func _input(event: InputEvent) -> void:
 		elif interacting and event.keycode in num_map:
 			var idx = num_map[event.keycode]
 			if idx >= len(inventory): return
-			interact_slot = idx
+			interact_slot = inventory[idx].slot
 		elif event.keycode == KEY_SPACE and interacting:
 			interact_slot = null
-		elif event.keycode == KEY_J:
-			next_moves.push_back(Vector4(0, 0, -1, 0))
-		elif event.keycode == KEY_L:
-			next_moves.push_back(Vector4(0, 0, 1, 0))
 		elif event.keycode == KEY_H and interacting:
 			var dir = get_keyboard_vec()
 			var pos = Vector4(dir.x, dir.y, 0, 1)
 			if pos in map:
 				break_4d(pos)
 				next_moves.push_back(pos)
+			
+		elif event.keycode == KEY_J:
+			next_moves.push_back(Vector4(0, 0, -1, 0))
+		elif event.keycode == KEY_L:
+			next_moves.push_back(Vector4(0, 0, 1, 0))
 			
 		elif event.keycode == KEY_B and interacting:
 			var dir = get_keyboard_vec()
@@ -251,6 +235,10 @@ func _input(event: InputEvent) -> void:
 				clean_map.append(block)
 				
 			file.store_string(JSON.stringify(clean_map))
+			
+		elif event.keycode == KEY_H:
+			help_dialog.popup_centered()
+		
 		elif event.keycode == KEY_R:
 			next_moves = []
 			for pos in map:
@@ -683,7 +671,7 @@ func handle_move(data: Dictionary) -> void:
 		# Last move succeeded
 		if len(next_moves) != 0:
 			next_moves.pop_at(0)
-			print('moves left: %d' % [last_move, len(next_moves)])
+			print('moves left: %d' % [len(next_moves)])
 		update_map(data['map'])
 		look_around()
 

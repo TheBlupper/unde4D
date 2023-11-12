@@ -12,7 +12,7 @@ var item_slot_scene = preload('res://Prefabs/ItemSlot.tscn')
 var slot_grid: Array[Array] = []
 var slot_arr: Array = []
 var selected_idx = 0
-var selected_slot: String = ""
+var selected_slot = null
 
 var cnum_re = RegEx.new()
 

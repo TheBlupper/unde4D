@@ -26,7 +26,7 @@ reflected_light_source = 2
 
 [node name="Node3D" type="Node3D"]
 
-[node name="GameManager" type="MeshInstance3D" parent="." node_paths=PackedStringArray("hp_label", "xp_label", "level_label", "inventory_controller", "camera", "auto_kill_checkbox", "auto_mine_checkbox", "exclude_players_checkbox", "exclude_ghosts_checkbox", "z_axis_up_checkbox", "render_distance_spinbox", "render_up_spinbox", "render_down_spinbox", "debug_move_label", "render_rock_checkbox", "render_hypercube_checkbox", "auto_loot_checkbox", "mouse_tooltip")]
+[node name="GameManager" type="MeshInstance3D" parent="." node_paths=PackedStringArray("hp_label", "xp_label", "level_label", "inventory_controller", "camera", "auto_kill_checkbox", "auto_mine_checkbox", "exclude_players_checkbox", "exclude_ghosts_checkbox", "z_axis_up_checkbox", "render_distance_spinbox", "render_up_spinbox", "render_down_spinbox", "debug_move_label", "render_rock_checkbox", "render_hypercube_checkbox", "auto_loot_checkbox", "mouse_tooltip", "help_dialog")]
 script = ExtResource("2_tke7g")
 hp_label = NodePath("../CanvasLayer/VBoxContainer/HPLabel")
 xp_label = NodePath("../CanvasLayer/VBoxContainer/XPLabel")
@@ -46,6 +46,7 @@ render_rock_checkbox = NodePath("../CanvasLayer/VBoxContainer/RenderRock")
 render_hypercube_checkbox = NodePath("../CanvasLayer/VBoxContainer/RenderHypercube")
 auto_loot_checkbox = NodePath("../CanvasLayer/VBoxContainer/AutoLoot")
 mouse_tooltip = NodePath("../MouseTooltip")
+help_dialog = NodePath("../CanvasLayer/HelpDialog")
 
 [node name="CanvasLayer" type="CanvasLayer" parent="."]
 
@@ -217,6 +218,35 @@ layout_mode = 2
 theme = ExtResource("2_rbnlw")
 text = "FPS"
 script = ExtResource("4_pkqnc")
+
+[node name="HelpDialog" type="AcceptDialog" parent="CanvasLayer"]
+title = "Help"
+content_scale_mode = 1
+
+[node name="RichTextLabel" type="RichTextLabel" parent="CanvasLayer/HelpDialog"]
+offset_right = 40.0
+offset_bottom = 40.0
+bbcode_enabled = true
+text = "[b]General keys[/b]
+Up, down, left, right - Movement in XY
+WASD - Movement in ZW
+ESC - Toggle interact mode
+F - Save current map
+H - Help
+R - Reset map and pushed moves (do this if unable to move)
+
+[b]Interact mode[/b]
+Direction + M - Push move
+Direction + Enter - Interact with selected slot
+0-9 - Select a slot
+Space - Clear selected slot (break block)
+
+[b]Inventory[/b]
+Left click - Select slot
+Right click - Swap/move/merge selected stack
+Middle click - Move a single item"
+fit_content = true
+autowrap_mode = 0
 
 [node name="MouseTooltip" parent="." instance=ExtResource("7_2xdsx")]
 
